@@ -1,5 +1,11 @@
+#include <vector>
+#include <optional>
+#include <variant>
 #include <cassert>
 #include "scanner.h"
+#include "lille_type.h"
+#include "lille_kind.h"
+#include "token.h"
 #include "id_table.h"
 #include "error_handler.h"
 #include "parser.h"
@@ -50,6 +56,7 @@
 parser::parser(scanner *scan_, id_table *id_tab_, error_handler *err_)
 {
     assert(scan_ != nullptr);
+    assert(id_tab_ != nullptr);
     assert(err_ != nullptr);
 
     this->indentation = -1;
@@ -112,6 +119,7 @@ void parser::prog()
 void parser::block()
 {
     ENTER();
+    id_tab->enter_scope();
     
     while (in_first_of_declaration(this->scan->this_token()->get_sym()))
     {
@@ -133,6 +141,7 @@ void parser::block()
     }
 
     LEAVE();
+    id_tab->exit_scope();
 }
 
 
@@ -145,38 +154,122 @@ void parser::declaration()
 
     if (this->scan->have(symbol::identifier))
     {
-        this->ident_list();
+	std::vector<token*> identifiers = this->ident_list();
+	lille_kind kind = lille_kind(lille_kind::variable);
+	lille_type type = lille_type(lille_type::type_unknown);
+	std::variant<int,float,bool,std::string> value;
+	bool constant = false;
         
         DEBUG("colon symbol");
         this->scan->must_be(symbol::colon_sym);
 
         if (this->scan->have(symbol::constant_sym))
         {
+	    constant = true;
+	    kind = lille_kind(lille_kind::constant);
+
             DEBUG("constant symbol");
             this->scan->must_be(symbol::constant_sym);
         }
 
-        this->type();
+        type = this->type();
 
-        if (this->scan->have(symbol::becomes_sym))
+        if (constant)
         {
-            DEBUG("becomes symbol");
-            this->scan->must_be(symbol::becomes_sym);
+	    if (this->scan->have(symbol::becomes_sym))
+	    {
+		DEBUG("becomes symbol");
+		this->scan->must_be(symbol::becomes_sym);
 
-            if (this->scan->have(symbol::integer)
-                or this->scan->have(symbol::real_num)
-                or this->scan->have(symbol::strng)
-                or this->scan->have(symbol::true_sym)
-                or this->scan->have(symbol::false_sym))
-            {
-                DEBUG("<number> | <string> | <bool>");
-                this->scan->get_token();
-            }
-            else
-            {
-                this->err->flag(this->scan->this_token(), 84);
-            }
+		if (this->scan->have(symbol::integer))
+		{
+		    DEBUG("<integer>");
+		    value = this->scan->this_token()->get_integer_value();
+		    if (type.get_type() != lille_type::type_integer)
+		    {
+			this->err->flag(this->scan->this_token(), 111);
+		    }
+
+		    this->scan->must_be(symbol::integer);
+		}
+		else if (this->scan->have(symbol::real_num))
+		{
+		    DEBUG("<real>");
+		    value = this->scan->this_token()->get_real_value();
+		    if (type.get_type() != lille_type::type_real)
+		    {
+			this->err->flag(this->scan->this_token(), 111);
+		    }
+
+		    this->scan->must_be(symbol::real_num);
+		}
+		else if(this->scan->have(symbol::strng))
+		{
+		    DEBUG("<string>");
+		    value = this->scan->this_token()->get_string_value();
+		    if (type.get_type() != lille_type::type_string)
+		    {
+			this->err->flag(this->scan->this_token(), 111);
+		    }
+
+		    this->scan->must_be(symbol::strng);
+		}
+		else if (this->scan->have(symbol::true_sym) or this->scan->have(symbol::false_sym))
+		{
+		    DEBUG("<boolean>");
+		    if (this->scan->have(symbol::true_sym))
+		    {
+			value = true;
+		    }
+		    else
+		    {
+			value = false;
+		    }
+
+		    if (type.get_type() != lille_type::type_boolean)
+		    {
+			this->err->flag(this->scan->this_token(), 111);
+		    }
+
+		    this->scan->get_token();
+		}
+		else
+		{
+		    this->err->flag(this->scan->this_token(), 84);
+		}
+	    }
+	    else
+	    {
+		this->err->flag(this->scan->this_token(), 110);
+	    }
         }
+
+	for (token *variable : identifiers)
+	{
+	    if (debugging)
+	    {
+		std::cout << "[ID TABLE] creating entry \"" << variable->get_identifier_value() << "\"\n";
+	    }
+
+	    id_table_entry *id = id_tab->enter_id(variable, type, kind, id_tab->get_scope(), 0, lille_type::type_unknown);
+
+	    if (constant)
+	    {
+		if (verbose)
+		{
+		    std::cout << "[ID TABLE] setting constant value for entry \"" << variable->get_identifier_value() <<  "\"\n";
+		}
+	    
+		id->fix_const(value);
+	    }
+
+	    if (debugging)
+	    {
+		std::cout << "[ID TABLE] adding entry \"" << variable->get_identifier_value() << "\" to the ID table\n";
+	    }
+
+	    id_tab->add_table_entry(id);
+	}
 
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
@@ -210,12 +303,23 @@ void parser::declaration()
     }
     else if (this->scan->have(symbol::function_sym))
     {
+	token *function = nullptr;
+	lille_kind kind = lille_kind::unknown;
+	lille_type type = lille_type::type_func;
+	int level = id_tab->get_scope();
+	lille_type return_type = lille_type::type_unknown;
+
         DEBUG("function symbol");
         this->scan->must_be(symbol::function_sym);
 
         DEBUG("identifier symbol");
+	if (this->scan->have(symbol::identifier))
+	{
+	    function = this->scan->this_token();
+	}
         this->scan->must_be(symbol::identifier);
 
+	id_tab->enter_scope();
         if (this->scan->have(symbol::left_paren_sym))
         {
             DEBUG("left parenthesis symbol");
@@ -230,7 +334,7 @@ void parser::declaration()
         DEBUG("return symbol");
         this->scan->must_be(symbol::return_sym);
 
-        this->type();
+        return_type = this->type();
 
         DEBUG("is symbol");
         this->scan->must_be(symbol::is_sym);
@@ -239,6 +343,16 @@ void parser::declaration()
         
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
+
+	id_table_entry *function_id = id_tab->enter_id(function, type, kind, level, 0, return_type);
+	id_tab->add_table_entry(function_id);
+
+	if (debugging)
+	{
+	    std::cout << "[ID TABLE] added \"" << function->get_identifier_value() << "\" to scope " << std::to_string(id_tab->get_scope()) << '\n';
+	}
+
+	id_tab->exit_scope();
     }
     else
     {
@@ -249,22 +363,38 @@ void parser::declaration()
 }
 
 // <type> ::= integer | real | string | boolean
-void parser::type()
+lille_type parser::type()
 {
     ENTER();
 
-    if (   this->scan->have(symbol::integer_sym) 
-        or this->scan->have(symbol::real_sym) 
-        or this->scan->have(symbol::string_sym) 
-        or this->scan->have(symbol::boolean_sym)
-    )
+    if (this->scan->have(symbol::integer_sym))
     {
-        DEBUG("<type>");
-        this->scan->get_token();
+	DEBUG("keyword integer");
+	this->scan->must_be(symbol::integer_sym);
+	return lille_type::type_integer;
+    }
+    else if (this->scan->have(symbol::real_sym))
+    {
+	DEBUG("<keyword real>");
+	this->scan->must_be(symbol::real_sym);
+	return lille_type::type_real;
+    }
+    else if (this->scan->have(symbol::string_sym))
+    {
+	DEBUG("<keyword string>");
+	this->scan->must_be(symbol::string_sym);
+	return lille_type::type_string;
+    }
+    else if (this->scan->have(symbol::boolean_sym))
+    {
+	DEBUG("<keyword boolean>");
+	this->scan->must_be(symbol::boolean_sym);
+	return lille_type::type_boolean;
     }
     else
     {
         this->err->flag(scan->this_token(), 96);
+	return lille_type::type_unknown;
     }
 
     LEAVE();
@@ -312,11 +442,16 @@ void parser::param()
 
 
 // <ident_list> ::= <ident> { , <ident> }*
-void parser::ident_list()
+std::vector<token*> parser::ident_list()
 {
+    std::vector<token*> identifiers;
     ENTER();
 
     DEBUG("identifier symbol");
+    if (this->scan->have(symbol::identifier))
+    {
+	identifiers.push_back(this->scan->this_token());	
+    }
     this->scan->must_be(symbol::identifier);
 
     while (this->scan->have(symbol::comma_sym))
@@ -325,10 +460,20 @@ void parser::ident_list()
         this->scan->must_be(symbol::comma_sym);
 
         DEBUG("identifier symbol");
-        this->scan->must_be(symbol::identifier);
+	if (this->scan->have(symbol::identifier))
+	{
+	    identifiers.push_back(this->scan->this_token());	
+	}
+	this->scan->must_be(symbol::identifier);
+    }
+
+    if (debugging)
+    {
+	std::cout << "[ID TABLE] parsed " << identifiers.size() << " identifiers\n";
     }
 
     LEAVE();
+    return identifiers;
 }
 
 // <param_kind> ::= value | ref
@@ -628,6 +773,7 @@ void parser::while_statement()
 void parser::for_statement()
 {
     ENTER();
+    id_tab->enter_scope();
 
     DEBUG("for symbol");
     this->scan->must_be(symbol::for_sym);
@@ -649,6 +795,7 @@ void parser::for_statement()
     this->loop_statement();
 
     LEAVE();
+    id_tab->exit_scope();
 }
 
 // <loop_statement> ::= loop <statement_list> end loop
@@ -873,7 +1020,7 @@ void parser::primary()
     }
     else
     {
-        this->err->flag(this->scan->this_token(), 124);
+        this->err->flag(this->scan->this_token(), 84);
     }
 }
 

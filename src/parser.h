@@ -1,7 +1,10 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
+#include <vector>
+
 #include "symbol.h"
+#include "lille_type.h"
 #include "token.h"
 #include "scanner.h"
 #include "id_table.h"
@@ -19,10 +22,10 @@ class parser
         void block();
         void declaration();
 
-        void type();
-        void param_list();
+        lille_type type();
+	void param_list();
         void param();
-        void ident_list();        
+	std::vector<token*> ident_list();        
         void param_kind();
 
         void statement_list();

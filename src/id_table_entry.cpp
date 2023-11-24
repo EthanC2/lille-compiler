@@ -147,7 +147,7 @@ void id_table_entry::add_parameter(id_table_entry *parameter)
 	parameter_list = {};
     }
 
-    parameter_list->push_back(*parameter);
+    parameter_list->push_back(parameter);
 }
 
 id_table_entry* id_table_entry::get_nth_parameter(int n)
@@ -168,7 +168,7 @@ id_table_entry* id_table_entry::get_nth_parameter(int n)
 	return nullptr;
     }
 
-    return &(*parameter_list)[n].get();
+    return (*parameter_list)[n];
 }
 
 int id_table_entry::get_number_of_parameters()
@@ -191,9 +191,43 @@ std::string id_table_entry::to_string()
     std::string description {"id_table_entry { name: " + get_name()
 	 + ", type: " + type.to_string()
 	 + ", kind: " + kind.to_string()
+	 + ", level: " + std::to_string(level)
+	 + ", trace: " + (trace ? "true" : "false")
     };
 
-    description += '}';
+    if (type.get_type() == lille_type::type_proc or type.get_type() == lille_type::type_func)
+    {
+	if (parameter_list.has_value())
+	{
+	    description += "parameter list: { ";
+
+	    for (id_table_entry *parameter : *parameter_list)
+	    {
+		description += parameter->to_string() + ',';
+	    }
+
+	    description += '}';
+	}
+
+	if (type.get_type() == lille_type::type_func)
+	{
+	    description += ", return type: " + return_type->to_string();
+	}
+    }
+
+    if (kind.is_kind(lille_kind::constant))
+    {
+	if (type.get_type() == lille_type::type_integer)
+	{
+	    description += ", value: " + std::to_string(std::get<int>(*value));
+	}
+	else if (type.get_type() == lille_type::type_real)
+	{
+	    description += ", value: " + std::to_string(std::get<float>(*value));
+	}
+    }
+
+    description += " }";
     return description;
 }
 

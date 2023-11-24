@@ -60,7 +60,7 @@ class id_table_entry
 	std::optional<std::variant<int,float,bool,std::string>> value;
 	
 	// Procedures and functions only (type_proc || type_func)
-	std::optional<std::vector<std::reference_wrapper<id_table_entry>>> parameter_list;
+	std::optional<std::vector<id_table_entry*>> parameter_list;
 
 	// Functions only (type_func)
 	std::optional<lille_type> return_type;

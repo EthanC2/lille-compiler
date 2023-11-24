@@ -26,24 +26,40 @@ id_table::id_table(error_handler* err)
     scope_level = 0;
 }
 
+id_table::~id_table()
+{
+    if (debugging)
+    {
+    	dump_id_table(true);
+    } 
+}
 
 void id_table::dump_id_table(bool dump_all)
 {
-	if (!dump_all)
+	if (not dump_all)
 	{
 		cout << "Dump of idtable for current scope only." << endl;
 		cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 		
-		// Print current scope
+		dump_tree(scopes[scope_level]);
 	}
 	else
 	{
 		cout << "Dump of the entire symbol table." << endl;
 		cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 		
-		for (size_t i=0; i <= scope_level; ++i)
+		for (int i=0; i <= scopes.size(); ++i)
 		{
-		    // Print i'th scope
+		    std::cout << "\nSCOPE " << std::to_string(i) << ":\n";
+
+		    if (scopes[i] == nullptr)
+		    {
+			std::cout << "<EMPTY>\n";
+		    }
+		    else
+		    {
+			dump_tree(scopes[i]);
+		    }
 		}
 	}
 }
@@ -100,17 +116,17 @@ id_table_entry* id_table::lookup(IdTableNode *node, const std::string &name)
 	return nullptr;
     }
 
-    if (name < node->entry.get_name())
+    if (name < node->entry->get_name())
     {
 	return lookup(node->left, name);
     }
-    else if (name > node->entry.get_name())
+    else if (name > node->entry->get_name())
     {
 	return lookup(node->right, name);
     }
     else
     {
-	return &node->entry;
+	return node->entry;
     }
 }
 
@@ -140,17 +156,17 @@ id_table_entry* id_table::lookup(IdTableNode *node, token *tok)
 	return nullptr;
     }
 
-    if (tok < node->entry.get_token())
+    if (tok < node->entry->get_token())
     {
 	return lookup(node->left, tok);
     }
-    else if (tok > node->entry.get_token())
+    else if (tok > node->entry->get_token())
     {
 	return lookup(node->right, tok);
     }
     else
     {
-	return &node->entry;
+	return node->entry;
     }
 }
 
@@ -162,18 +178,18 @@ void id_table::trace_all(bool b)
 }
 
 
-bool id_table::add_table_entry(id_table_entry &id)
+bool id_table::add_table_entry(id_table_entry *id)
 {
     return add_table_entry(scopes[scope_level], id);
 }
 
-bool id_table::add_table_entry(IdTableNode *node, id_table_entry& entry)
+bool id_table::add_table_entry(IdTableNode *node, id_table_entry *entry)
 {
   if (node == scopes[scope_level] && scopes[scope_level] == nullptr)
     {
 	if (debugging)
 	{
-	    std::cout << "[ID TABLE] added \"" << entry.get_name() << "\" as root node " << std::to_string(scope_level) << '\n';
+	    std::cout << "[ID TABLE] added \"" << entry->get_name() << "\" as root node " << std::to_string(scope_level) << '\n';
 	}
 
 	scopes[scope_level] = new IdTableNode(entry);
@@ -208,10 +224,10 @@ bool id_table::add_table_entry(IdTableNode *node, id_table_entry& entry)
     {
 	if (debugging)
 	{
-	    std::cout << "[ID TABLE] DUPLICATE ENTRY: \"" << entry.get_name() << "\" in scope " << std::to_string(scope_level) << '\n';
+	    std::cout << "[ID TABLE] DUPLICATE ENTRY: \"" << entry->get_name() << "\" in scope " << std::to_string(scope_level) << '\n';
 	}
 	
-	throw lille_exception("attempted to add duplicate entry \"" + entry.get_name() + "\" in scope " + std::to_string(scope_level));
+	throw lille_exception("attempted to add duplicate entry \"" + entry->get_name() + "\" in scope " + std::to_string(scope_level));
 	
 	return false;
     }
@@ -219,6 +235,18 @@ bool id_table::add_table_entry(IdTableNode *node, id_table_entry& entry)
 
 id_table_entry* id_table::enter_id(token *id, lille_type typ, lille_kind kind, int level, int offset, lille_type return_tipe)
 {
-    // TODO
-    return nullptr;
+    return new id_table_entry(id, typ, kind, level, offset, return_tipe);
+}
+
+void id_table::dump_tree(IdTableNode *node, int depth)
+{
+    if (node == nullptr)
+    {
+	return;
+    }
+
+    std::cout << '[' << std::to_string(depth) << "] " << node->entry->to_string() << '\n';
+
+    dump_tree(node->left, depth + 1);
+    dump_tree(node->right, depth + 1);
 }

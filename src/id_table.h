@@ -23,32 +23,34 @@ using namespace std;
 
 struct IdTableNode
 {
-    IdTableNode(const id_table_entry &entry_)
+    IdTableNode(id_table_entry *entry_)
     {
 	entry = entry_;
 	left = nullptr;
 	right = nullptr;
     }
 
-    id_table_entry entry;
-    IdTableNode* left;
-    IdTableNode* right;
+    id_table_entry *entry;
+    IdTableNode *left;
+    IdTableNode *right;
 };
 
 class id_table 
 {
     private:
-	    bool debugging {true};
+	    bool debugging {false};
 	    std::vector<IdTableNode*> scopes;
 	    int scope_level;
 	    error_handler* error;
 
-	    bool add_table_entry(IdTableNode *node, id_table_entry& entry);
+	    bool add_table_entry(IdTableNode *node, id_table_entry *entry);
 	    id_table_entry* lookup(IdTableNode *node, const std::string &name);
 	    id_table_entry* lookup(IdTableNode *node, token *tok);
+	    void dump_tree(IdTableNode *node, int depth = 0);
 
     public:
 	id_table(error_handler* err);
+	~id_table();
 	void enter_scope();
 	void exit_scope();
 	size_t get_scope();
@@ -56,7 +58,7 @@ class id_table
 	id_table_entry* lookup(token *tok);
 	void trace_all(bool b);
 	//bool trace_all();
-	bool add_table_entry(id_table_entry &id);
+	bool add_table_entry(id_table_entry *id);
 	id_table_entry* enter_id(
 		token *id,
 		lille_type typ = lille_type::type_unknown,

@@ -20,7 +20,7 @@
 using namespace std;
 
 
-id_table::id_table(error_handler* err)
+id_table::id_table(error_handler* err): scopes({nullptr})
 {
     error = err;
     scope_level = 0;
@@ -50,7 +50,7 @@ void id_table::dump_id_table(bool dump_all)
 		
 		for (int i=0; i <= scopes.size(); ++i)
 		{
-		    std::cout << "\nSCOPE " << std::to_string(i) << ":\n";
+		    std::cout << "\nSCOPE " << i << ":\n";
 
 		    if (scopes[i] == nullptr)
 		    {
@@ -68,7 +68,12 @@ void id_table::enter_scope()
 {
     if (debugging)
     {
-	std::cout << "[ID TABLE] incremented scope from " << scope_level << " to " << scope_level+1 << '\n';
+	std::cout << "[ID TABLE] incremented scope: " << scope_level << " => " << scope_level+1 << '\n';
+	for (const IdTableNode* scope : scopes)
+	{
+	    std::cout << scope << ", ";
+	}
+	std::cout.put('\n');
     }
 
     ++scope_level;
@@ -79,7 +84,12 @@ void id_table::exit_scope()
 {
     if (debugging)
     {
-	std::cout << "[ID TABLE] decremented scope from " << scope_level << " to " << scope_level-1 << '\n';
+	std::cout << "[ID TABLE] decremented scope: " << scope_level << " => " << scope_level-1 << '\n';
+	for (const IdTableNode* scope : scopes)
+	{
+	    std::cout << scope << ", ";
+	}
+	std::cout.put('\n');
     }
 
     --scope_level;
@@ -180,16 +190,21 @@ void id_table::trace_all(bool b)
 
 bool id_table::add_table_entry(id_table_entry *id)
 {
+    if (debugging)
+    {
+	std::cout << "[ID TABLE: " << __FUNCTION__ << "] adding table entry \"" << id->get_name() << "\" to scope level " << scope_level << '\n';
+    }
+
     return add_table_entry(scopes[scope_level], id);
 }
 
 bool id_table::add_table_entry(IdTableNode *node, id_table_entry *entry)
 {
-  if (node == scopes[scope_level] && scopes[scope_level] == nullptr)
+    if (/*node == scopes[scope_level] &&*/ scopes[scope_level] == nullptr)
     {
 	if (debugging)
 	{
-	    std::cout << "[ID TABLE] added \"" << entry->get_name() << "\" as root node " << std::to_string(scope_level) << '\n';
+	    std::cout << "[ID TABLE: add_table_entry] added \"" << entry->get_name() << "\" as root node at scope " << scope_level << '\n';
 	}
 
 	scopes[scope_level] = new IdTableNode(entry);
@@ -245,7 +260,7 @@ void id_table::dump_tree(IdTableNode *node, int depth)
 	return;
     }
 
-    std::cout << '[' << std::to_string(depth) << "] " << node->entry->to_string() << '\n';
+    std::cout << "[depth: " << std::to_string(depth) << "] " << node->entry->to_string() << '\n';
 
     dump_tree(node->left, depth + 1);
     dump_tree(node->right, depth + 1);

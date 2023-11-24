@@ -16,8 +16,7 @@ id_table_entry::id_table_entry()
     offset = 0;
     trace = false;
     value = std::nullopt;
-    parameter_list = std::nullopt;
-    return_type = std::nullopt;
+    return_type = lille_type::type_unknown;
 }
 
 id_table_entry::id_table_entry(token *id_, lille_type type_, lille_kind kind_, int level_, int offset_, lille_type return_type_)
@@ -29,7 +28,6 @@ id_table_entry::id_table_entry(token *id_, lille_type type_, lille_kind kind_, i
     offset = offset_,
     trace = false;
     value = std::nullopt;
-    parameter_list = std::nullopt;
     return_type = return_type_;
 }
 
@@ -117,7 +115,7 @@ lille_type id_table_entry::get_return_type()
 	throw lille_exception("cannot access return type of non-function type");
     }
 
-    return *return_type;
+    return return_type;
 }
 
 void id_table_entry::fix_const(std::variant<int,float,bool,std::string> value_)
@@ -142,12 +140,7 @@ void id_table_entry::add_parameter(id_table_entry *parameter)
 	throw lille_exception("cannot access append parameter to parameter list of non-procedure and non-function types");
     }
 
-    if (not parameter_list.has_value())
-    {
-	parameter_list = {};
-    }
-
-    parameter_list->push_back(parameter);
+    parameter_list.push_back(parameter);
 }
 
 id_table_entry* id_table_entry::get_nth_parameter(int n)
@@ -157,18 +150,13 @@ id_table_entry* id_table_entry::get_nth_parameter(int n)
 	throw lille_exception("cannot access nth parameter for non-procedure and non-function types");
     }
 
-    if (not parameter_list.has_value())
-    {
-	parameter_list = {};
-    }
-
-    if (parameter_list->size() >= n)
+    if (parameter_list.size() >= n)
     {
 	//throw lille_exception("cannot access " + std::to_string(n) + "th parameter of a function with " + std::to_string(parameter_list->size()) + " parameters");
 	return nullptr;
     }
 
-    return (*parameter_list)[n];
+    return parameter_list[n];
 }
 
 int id_table_entry::get_number_of_parameters()
@@ -178,12 +166,7 @@ int id_table_entry::get_number_of_parameters()
 	throw lille_exception("cannot access number of paramters for non-procedure and non-function types");
     }
 
-    if (not parameter_list.has_value())
-    {
-	parameter_list = {};
-    }
-
-    return parameter_list->size();
+    return parameter_list.size();
 }
 
 std::string id_table_entry::to_string()
@@ -197,13 +180,13 @@ std::string id_table_entry::to_string()
 
     if (type.get_type() == lille_type::type_proc or type.get_type() == lille_type::type_func)
     {
-	if (parameter_list.has_value())
+	if (not parameter_list.empty())
 	{
-	    description += "parameter list: { ";
+	    description += ", parameter list: {\n";
 
-	    for (id_table_entry *parameter : *parameter_list)
+	    for (id_table_entry *parameter : parameter_list)
 	    {
-		description += parameter->to_string() + ',';
+		description += "\t" + parameter->to_string() + ",\n";
 	    }
 
 	    description += '}';
@@ -211,7 +194,7 @@ std::string id_table_entry::to_string()
 
 	if (type.get_type() == lille_type::type_func)
 	{
-	    description += ", return type: " + return_type->to_string();
+	    description += ", return type: " + return_type.to_string();
 	}
     }
 

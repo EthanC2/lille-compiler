@@ -23,10 +23,10 @@ class parser
         void declaration();
 
         lille_type type();
-	void param_list();
-        void param();
+	void param_list(id_table_entry *subprogram);
+	void param(id_table_entry *subprogram);
 	std::vector<token*> ident_list();        
-        void param_kind();
+        lille_kind param_kind();
 
         void statement_list();
         void statement();

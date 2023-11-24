@@ -38,7 +38,7 @@ struct IdTableNode
 class id_table 
 {
     private:
-	    bool debugging {true};
+	    bool debugging {false};
 	    std::vector<IdTableNode*> scopes;
 	    int scope_level;
 	    error_handler* error;

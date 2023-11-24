@@ -21,7 +21,7 @@
                 std::cout << "    ";                                 \
             }                                                        \
                                                                      \
-            std::cout << "[DEBUG: ENTER " << __FUNCTION__ << "]: " << this->scan->this_token()->get_symbol()->symtostr() << '\n';  \
+            std::cout << "[PARSER: ENTER " << __FUNCTION__ << "]: " << this->scan->this_token()->get_symbol()->symtostr() << '\n';  \
         }                                                            \
     } while (0)                                                      \
 
@@ -35,7 +35,7 @@
                 std::cout << "    ";                                 \
             }                                                        \
                                                                      \
-            std::cout << "[DEBUG: LEAVE " << __FUNCTION__ << "]: " << this->scan->this_token()->get_symbol()->symtostr() << '\n';  \
+            std::cout << "[PARSER: LEAVE " << __FUNCTION__ << "]: " << this->scan->this_token()->get_symbol()->symtostr() << '\n';  \
             --this->indentation;                                     \
         }                                                            \
     } while (0) \
@@ -49,7 +49,7 @@
             {                                                                \
                 std::cout << "    ";                                           \
             }                                                                \
-            std::cout << "[DEBUG: " << __FUNCTION__ << "] " << msg << '\n';  \
+            std::cout << "[PARSER: " << __FUNCTION__ << "] " << msg << '\n';  \
         }                                                                    \
     } while (0)                                                              \
 
@@ -290,6 +290,13 @@ void parser::declaration()
 	if (this->scan->have(symbol::identifier))
 	{
 	    procedure = this->scan->this_token();
+	    procedure_id = id_tab->enter_id(procedure, type, kind, level, 0, return_type);
+	    id_tab->add_table_entry(procedure_id);
+
+	    if (debugging)
+	    {
+		std::cout << "[ID TABLE] added \"" << procedure->get_identifier_value() << "\" to scope " << id_tab->get_scope() << '\n';
+	    }
 	}
         this->scan->must_be(symbol::identifier);
 
@@ -299,7 +306,7 @@ void parser::declaration()
             DEBUG("left parenthesis symbol");
             this->scan->must_be(symbol::left_paren_sym);
 
-            this->param_list();
+            this->param_list(procedure_id);
 
             DEBUG("right parenthesis symbol");
             this->scan->must_be(symbol::right_paren_sym);
@@ -312,14 +319,6 @@ void parser::declaration()
 
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
-
-	procedure_id = id_tab->enter_id(procedure, type, kind, level, 0, return_type);
-	id_tab->add_table_entry(procedure_id);
-
-	if (debugging)
-	{
-	    std::cout << "[ID TABLE] added \"" << procedure->get_identifier_value() << "\" to scope " << std::to_string(id_tab->get_scope()) << '\n';
-	}
 
 	id_tab->exit_scope();
     }
@@ -339,6 +338,13 @@ void parser::declaration()
 	if (this->scan->have(symbol::identifier))
 	{
 	    function = this->scan->this_token();
+	    function_id = id_tab->enter_id(function, type, kind, level, 0, return_type);
+	    id_tab->add_table_entry(function_id);
+
+	    if (debugging)
+	    {
+		std::cout << "[ID TABLE] added \"" << function->get_identifier_value() << "\" to scope " << std::to_string(id_tab->get_scope()) << '\n';
+	    }
 	}
         this->scan->must_be(symbol::identifier);
 
@@ -348,7 +354,7 @@ void parser::declaration()
             DEBUG("left parenthesis symbol");
             this->scan->must_be(symbol::left_paren_sym);
 
-            this->param_list();
+            this->param_list(function_id);
 
             DEBUG("right parenthesis symbol");
             this->scan->must_be(symbol::right_paren_sym);
@@ -357,7 +363,11 @@ void parser::declaration()
         DEBUG("return symbol");
         this->scan->must_be(symbol::return_sym);
 
-        return_type = this->type();
+        function_id->fix_return_type(this->type());
+	if (debugging)
+	{
+	    std::cout << "[ID TABLE: simple_statement::function] set return type to " << function_id->get_type().to_string() << '\n';
+	}
 
         DEBUG("is symbol");
         this->scan->must_be(symbol::is_sym);
@@ -366,14 +376,6 @@ void parser::declaration()
         
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
-
-	function_id = id_tab->enter_id(function, type, kind, level, 0, return_type);
-	id_tab->add_table_entry(function_id);
-
-	if (debugging)
-	{
-	    std::cout << "[ID TABLE] added \"" << function->get_identifier_value() << "\" to scope " << std::to_string(id_tab->get_scope()) << '\n';
-	}
 
 	id_tab->exit_scope();
     }
@@ -424,18 +426,18 @@ lille_type parser::type()
 }
 
 // <param_list> ::= <param> { ; <param> }*
-void parser::param_list()
+void parser::param_list(id_table_entry *subprogram)
 {
     ENTER();
 
-    this->param();
+    this->param(subprogram);
 
     while (this->scan->have(symbol::semicolon_sym))
     {
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
 
-        this->param();
+	this->param(subprogram);
     }
 
     if (not this->scan->have(symbol::right_paren_sym))
@@ -447,20 +449,42 @@ void parser::param_list()
 }
 
 // <param> ::= <ident_list> : <param_kind> <type>
-void parser::param()
+void parser::param(id_table_entry *subprogram)
 {
+    std::vector<token*> identifiers;
+    id_table_entry *parameter_id = nullptr;
+    lille_type type = lille_type::type_unknown;
+    lille_kind kind = lille_kind::unknown;
+    int level = id_tab->get_scope();
+
     ENTER();
 
-    this->ident_list();
+    identifiers = this->ident_list();
 
     DEBUG("colon symbol");
     this->scan->must_be(symbol::colon_sym);
 
-    this->param_kind();
+    kind = this->param_kind();
 
-    this->type();
+    type = this->type();
+
+    for (token *identifier : identifiers)
+    {
+	parameter_id = id_tab->enter_id(identifier, type, kind, level);
+	subprogram->add_parameter(parameter_id);
+
+	if (debugging)
+	{
+	    std::cout << "[ID TABLE: param] added " << parameter_id->get_name() << " as parameter to subprogram " << subprogram->get_name() << '\n';
+	}
+    }
 
     LEAVE();
+    if (debugging)
+    {
+	std::cout << "[ID TABLE: param] found " << identifiers.size() << "  identifiers\n"; 
+	std::cout << "[ID TABLE: param] current parameter count: " << subprogram->get_number_of_parameters() << '\n';
+    }
 }
 
 
@@ -500,16 +524,24 @@ std::vector<token*> parser::ident_list()
 }
 
 // <param_kind> ::= value | ref
-void parser::param_kind()
+lille_kind parser::param_kind()
 {
-    if (this->scan->have(symbol::value_sym) or this->scan->have(symbol::ref_sym))
+    if (this->scan->have(symbol::value_sym))
     {
-        DEBUG("value | ref");
-        this->scan->get_token();
+        DEBUG("value");
+        this->scan->must_be(symbol::value_sym);
+	return lille_kind::value_param;
+    }
+    else if (this->scan->have(symbol::ref_sym))
+    {
+	DEBUG("ref");
+	this->scan->must_be(symbol::ref_sym);
+	return lille_kind::ref_param;
     }
     else
     {
         this->err->flag(this->scan->this_token(), 94);
+	return lille_kind::unknown;
     }
 }
 

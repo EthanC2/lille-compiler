@@ -62,7 +62,7 @@ string listing_filename;						// name of the listing file to be generated if nee
 error_handler* err;								// error handler object
 scanner* scan;									// scanner object
 parser* parse;									// parser object
-id_table* id_tab = NULL;								// symbol table object
+id_table* id_tab;								// symbol table object
 //code_gen* code;									// code generator
 
 bool process_command_line(int argc, char *argv[]) {
@@ -201,16 +201,17 @@ bool process_command_line(int argc, char *argv[]) {
 				err = new error_handler(source_filename, listing_filename);
 
 			// Create a symbol_table object
+			id_tab = new id_table(err);
 
 			// create a scanner object
-            scan = new scanner(source_filename, id_tab, err);
+			scan = new scanner(source_filename, id_tab, err);
 
 			// create the code generator
 
 			// create a parser object
-            parse = new parser(scan, id_tab, err);
-            //parse->dump_tokenstream();
-            parse->prog();
+			parse = new parser(scan, id_tab, err);
+			//parse->dump_tokenstream();
+			parse->prog();
 
 			// Compile the source code
 			
@@ -239,6 +240,7 @@ bool process_command_line(int argc, char *argv[]) {
 	}
 
     delete err;
+    delete id_tab;
     delete scan;
     delete parse;
 

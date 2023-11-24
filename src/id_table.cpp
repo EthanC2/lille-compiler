@@ -8,11 +8,14 @@
 
 
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include "token.h"
 #include "error_handler.h"
 #include "id_table.h"
+#include "id_table_entry.h"
+#include "lille_exception.h"
 
 using namespace std;
 
@@ -31,76 +34,191 @@ void id_table::dump_id_table(bool dump_all)
 		cout << "Dump of idtable for current scope only." << endl;
 		cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 		
-        // INSERT CODE HERE
+		// Print current scope
 	}
 	else
 	{
 		cout << "Dump of the entire symbol table." << endl;
 		cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 		
-        // INSERT CODE HERE
+		for (size_t i=0; i <= scope_level; ++i)
+		{
+		    // Print i'th scope
+		}
 	}
-}
-
-bool id_table::insert_entry(const IdTableEntry &entry)
-{
-    bool inserted = scopes[scope_level].insert(entry);
-
-    if (debugging)
-    {
-	if (inserted)
-	{
-	    std::cout << "[ID TABLE] inserted \"" << entry.identifier->get_identifier_value() << "\", scope level = " << scope_level << '\n';
-	}
-	else
-	{
-	    std::cout << "[ID TABLE] FAILED inserting \"" << entry.identifier->get_identifier_value() << "\", scope level = " << scope_level << '\n';
-	}
-    }
-
-    return inserted;
-}
-
-IdTableEntry* id_table::get_entry(token *identifier)
-{
-    IdTableEntry *entry = nullptr;
-    IdTableEntry key = IdTableEntry(identifier);
-    size_t scope = scope_level;
-
-    while (scope >= 0)
-    {
-	// TODO: rework this to not use a temporary IdTableEntry object
-	entry = scopes[scope].fetch(key);
-	if (entry != nullptr)
-	{
-	    if (debugging)
-	    {
-		std::cout << "[ID TABLE] FOUND \"" << identifier->get_identifier_value()  << "\", scope = " << scope << '\n'; 
-	    }
-	    return entry;
-	}
-
-	--scope;
-    }
-
-    if (debugging)
-    {
-	std::cout << "[ID TABLE] DID NOT FIND \"" << identifier->get_identifier_value() << "\"\n";
-    }
-    return nullptr;
 }
 
 void id_table::enter_scope()
 {
+    if (debugging)
+    {
+	std::cout << "[ID TABLE] incremented scope from " << scope_level << " to " << scope_level+1 << '\n';
+    }
+
     ++scope_level;
+    scopes.push_back(nullptr);
 }
 
 void id_table::exit_scope()
 {
+    if (debugging)
+    {
+	std::cout << "[ID TABLE] decremented scope from " << scope_level << " to " << scope_level-1 << '\n';
+    }
+
     --scope_level;
 }
 
 size_t id_table::get_scope()
 {
     return scope_level;
+}
+
+id_table_entry* id_table::lookup(const std::string &name)
+{
+    int level = scope_level;
+    id_table_entry *entry = nullptr;
+
+    while (level >= 0)
+    {
+	entry = lookup(scopes[level], name);
+	if (entry != nullptr)
+	{
+	    return entry;
+	}
+
+	--level;
+    }
+
+    return nullptr;
+}
+
+id_table_entry* id_table::lookup(IdTableNode *node, const std::string &name)
+{
+    if (node == nullptr)
+    {
+	return nullptr;
+    }
+
+    if (name < node->entry.get_name())
+    {
+	return lookup(node->left, name);
+    }
+    else if (name > node->entry.get_name())
+    {
+	return lookup(node->right, name);
+    }
+    else
+    {
+	return &node->entry;
+    }
+}
+
+id_table_entry* id_table::lookup(token *tok)
+{
+    int level = scope_level;
+    id_table_entry *entry = nullptr;
+
+    while (level >= 0)
+    {
+	entry = lookup(scopes[level], tok);
+	if (entry != nullptr)
+	{
+	    return entry;
+	}
+
+	--level;
+    }
+
+    return nullptr;
+}
+
+id_table_entry* id_table::lookup(IdTableNode *node, token *tok)
+{
+    if (node == nullptr)
+    {
+	return nullptr;
+    }
+
+    if (tok < node->entry.get_token())
+    {
+	return lookup(node->left, tok);
+    }
+    else if (tok > node->entry.get_token())
+    {
+	return lookup(node->right, tok);
+    }
+    else
+    {
+	return &node->entry;
+    }
+}
+
+void id_table::trace_all(bool b)
+{
+    // TODO
+    //for each variable in each scope
+    //	    variable.set_trace(true);
+}
+
+
+bool id_table::add_table_entry(id_table_entry &id)
+{
+    return add_table_entry(scopes[scope_level], id);
+}
+
+bool id_table::add_table_entry(IdTableNode *node, id_table_entry& entry)
+{
+  if (node == scopes[scope_level] && scopes[scope_level] == nullptr)
+    {
+	if (debugging)
+	{
+	    std::cout << "[ID TABLE] added \"" << entry.get_name() << "\" as root node " << std::to_string(scope_level) << '\n';
+	}
+
+	scopes[scope_level] = new IdTableNode(entry);
+	return true;
+    }
+
+    if (entry < node->entry)
+    {
+	if (node->left == nullptr)
+	{
+	    node->left = new IdTableNode(entry);
+	    return true;
+	}
+	else
+	{
+	    return add_table_entry(node->left, entry);
+	}
+    }
+    else if (entry > node->entry)
+    {
+	if (node->right == nullptr)
+	{
+	    node->right = new IdTableNode(entry);
+	    return true;
+	}
+	else
+	{
+	    return add_table_entry(node->right, entry);
+	}
+    }
+    else
+    {
+	if (debugging)
+	{
+	    std::cout << "[ID TABLE] DUPLICATE ENTRY: \"" << entry.get_name() << "\" in scope " << std::to_string(scope_level) << '\n';
+	}
+	
+	throw lille_exception("attempted to add duplicate entry \"" + entry.get_name() + "\" in scope " + std::to_string(scope_level));
+	
+	return false;
+    }
+}
+
+id_table_entry* id_table::enter_id(token *id, lille_type typ, lille_kind kind, int level, int offset, lille_type return_tipe)
+{
+    // TODO
+    return nullptr;
 }

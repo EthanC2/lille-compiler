@@ -276,12 +276,24 @@ void parser::declaration()
     }
     else if (this->scan->have(symbol::procedure_sym))
     {
+	id_table_entry *procedure_id = nullptr;
+	token *procedure = nullptr;
+	lille_kind kind = lille_kind::unknown;
+	lille_type type = lille_type::type_proc;
+	int level = id_tab->get_scope();
+	lille_type return_type = lille_type::type_unknown;
+
         DEBUG("procedure symbol");
         this->scan->must_be(symbol::procedure_sym);
 
         DEBUG("identifier symbol");
+	if (this->scan->have(symbol::identifier))
+	{
+	    procedure = this->scan->this_token();
+	}
         this->scan->must_be(symbol::identifier);
 
+	id_tab->enter_scope();
         if (this->scan->have(symbol::left_paren_sym))
         {
             DEBUG("left parenthesis symbol");
@@ -300,9 +312,20 @@ void parser::declaration()
 
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
+
+	procedure_id = id_tab->enter_id(procedure, type, kind, level, 0, return_type);
+	id_tab->add_table_entry(procedure_id);
+
+	if (debugging)
+	{
+	    std::cout << "[ID TABLE] added \"" << procedure->get_identifier_value() << "\" to scope " << std::to_string(id_tab->get_scope()) << '\n';
+	}
+
+	id_tab->exit_scope();
     }
     else if (this->scan->have(symbol::function_sym))
     {
+	id_table_entry *function_id = nullptr;
 	token *function = nullptr;
 	lille_kind kind = lille_kind::unknown;
 	lille_type type = lille_type::type_func;
@@ -344,7 +367,7 @@ void parser::declaration()
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
 
-	id_table_entry *function_id = id_tab->enter_id(function, type, kind, level, 0, return_type);
+	function_id = id_tab->enter_id(function, type, kind, level, 0, return_type);
 	id_tab->add_table_entry(function_id);
 
 	if (debugging)

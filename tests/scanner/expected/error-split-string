@@ -1,0 +1,6 @@
+ERROR: String must be terminated before the end of line is encountered. Error at (1, 0).
+TOKEN: Nul  Line No: 1 Pos on line: 0
+TOKEN: Identifier  Value: BAR  Line No: 2 Pos on line: 0
+ERROR: String must be terminated before the end of line is encountered. Error at (2, 3).
+TOKEN: Nul  Line No: 2 Pos on line: 3
+TOKEN: End_of_program  Line No: 3 Pos on line: -1

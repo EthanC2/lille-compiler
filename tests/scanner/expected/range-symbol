@@ -1,0 +1,4 @@
+TOKEN: Integer  Value: 1  Line No: 1 Pos on line: 0
+TOKEN: Range_sym  Line No: 1 Pos on line: 1
+TOKEN: Integer  Value: 15  Line No: 1 Pos on line: 3
+TOKEN: End_of_program  Line No: 2 Pos on line: -1

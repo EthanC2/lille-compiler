@@ -1,0 +1,4 @@
+TOKEN: Minus_sym  Line No: 1 Pos on line: 0
+ERROR: Integer number too large or malformed. Error at (1, 1).
+TOKEN: Nul  Line No: 1 Pos on line: 1
+TOKEN: End_of_program  Line No: 2 Pos on line: -1

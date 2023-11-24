@@ -1,0 +1,3 @@
+ERROR: String must be terminated before the end of line is encountered. Error at (1, 0).
+TOKEN: Nul  Line No: 1 Pos on line: 0
+TOKEN: End_of_program  Line No: 2 Pos on line: -1

@@ -1,0 +1,3 @@
+*** ERROR: A colon (:) is expected. Error #6 at (2, 17).
+*** ERROR: Parameter mode expected. Error #94 at (2, 17).
+*** ERROR: Type name integer, real, string or boolean expected. Error #96 at (2, 17).

@@ -1,0 +1,4 @@
+TOKEN: Strng  Value: foo  Line No: 1 Pos on line: 0
+TOKEN: Strng  Value: bar  Line No: 1 Pos on line: 6
+TOKEN: Strng  Value: baz  Line No: 1 Pos on line: 12
+TOKEN: End_of_program  Line No: 2 Pos on line: -1

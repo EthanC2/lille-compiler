@@ -1,0 +1,6 @@
+*** ERROR: Type name integer, real, string or boolean expected. Error #96 at (2, 28).
+*** ERROR: A right parenthesis ()) is expected. Error #21 at (2, 28).
+*** ERROR: An IS symbol is expected. Error #39 at (2, 28).
+*** ERROR: A colon (:) is expected. Error #6 at (2, 33).
+*** ERROR: Type name integer, real, string or boolean expected. Error #96 at (2, 33).
+*** ERROR: A semicolon (;) is expected. Error #5 at (2, 33).

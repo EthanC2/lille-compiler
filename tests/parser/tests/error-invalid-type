@@ -1,0 +1,8 @@
+program foo is
+    procedure foo(x : value xyzzy) is
+    begin
+        null;
+    end;
+begin
+    null;
+end;

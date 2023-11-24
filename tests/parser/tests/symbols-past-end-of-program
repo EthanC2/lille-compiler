@@ -1,0 +1,9 @@
+program foo is
+begin
+    null;
+end;
+
+procedure foo is
+begin
+    null;
+end;

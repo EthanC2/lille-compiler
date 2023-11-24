@@ -1,0 +1,5 @@
+TOKEN: Integer  Value: 123  Line No: 1 Pos on line: 0
+TOKEN: Real_num  Value: 456.789  Line No: 1 Pos on line: 4
+TOKEN: Integer  Value: 1230000  Line No: 1 Pos on line: 12
+TOKEN: Real_num  Value: 0.00013  Line No: 1 Pos on line: 18
+TOKEN: End_of_program  Line No: 2 Pos on line: -1

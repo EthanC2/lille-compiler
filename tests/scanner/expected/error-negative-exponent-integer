@@ -1,0 +1,5 @@
+ERROR: An integer can only have a positive exponent. Error at (1, 0).
+TOKEN: Nul  Line No: 1 Pos on line: 0
+TOKEN: Minus_sym  Line No: 1 Pos on line: 4
+TOKEN: Integer  Value: 4  Line No: 1 Pos on line: 5
+TOKEN: End_of_program  Line No: 2 Pos on line: -1

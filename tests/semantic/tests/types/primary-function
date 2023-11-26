@@ -1,0 +1,10 @@
+program foo is 
+    function bar return integer is
+    begin
+	return 100;
+    end;
+
+    x : integer;
+begin
+    x := bar();
+end;

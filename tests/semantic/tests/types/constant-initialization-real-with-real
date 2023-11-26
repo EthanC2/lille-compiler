@@ -1,0 +1,5 @@
+program foo is
+    x : constant real := 3.14;
+begin
+    null;
+end;

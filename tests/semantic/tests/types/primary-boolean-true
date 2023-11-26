@@ -1,0 +1,5 @@
+program foo is
+    x : boolean;
+begin
+    x := 1 = 1;
+end;

@@ -1,0 +1,8 @@
+program foo is 
+    procedure baz(x : value integer; y: value integer; z : ref integer) is
+    begin
+	z := x + y;
+    end qux;
+begin
+    null;
+end;

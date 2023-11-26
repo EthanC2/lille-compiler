@@ -2,4 +2,4 @@ program prog_empty is
 
 begin
     null;
-end foo;
+end prog_empty;

@@ -1,0 +1,9 @@
+program foo is
+    function bar(x : value integer; y : value integer; z : ref integer) return integer is
+    begin
+	z := x + y;
+	return z;
+    end;
+begin
+    null;
+end;

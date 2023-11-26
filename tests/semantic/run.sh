@@ -5,6 +5,7 @@ set -eu
 . ../testlib.sh
 
 # 2. Initialize local variables
+find . -name '*.pal' -print0 | xargs -0 rm -v || true
 categories=($(ls tests))
 nfailed=0
 npassed=0
@@ -16,7 +17,6 @@ fi
 
 for category in ${categories[@]}; do
     tests=($(ls tests/$category))
-    echo "category: $category"
 
     for test in ${tests[@]}; do
 	if [[ ! -e "expected/$category" ]]; then
@@ -25,7 +25,7 @@ for category in ${categories[@]}; do
 	fi
 
 	if [[ ! -e "expected/$category/$test" ]]; then
-	    >&2 "error: test case \"$test\" is missing its companion answer file in \"./expected\""
+	    >&2 "error: test case \"$category/$test\" is missing its companion answer file in \"./expected\""
 	    exit 2
 	fi
 

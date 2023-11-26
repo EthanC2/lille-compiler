@@ -208,15 +208,6 @@ void error_handler::initialize_error_messages()
 	error_message[122] = "Formal and actual parameter types do not match.";
 	error_message[123] = "Functions can only have value parameters.";
 	error_message[124] = "Primary expression expected.";
-	error_message[125] = "Ordered expression expected.";
-	error_message[126] = "Arithmetic or boolean expression expected.";
-	error_message[127] = "Real expression expected.";
-	error_message[128] = "String expression expected.";
-	error_message[129] = "Procedure expected.";
-	error_message[130] = "Function expected.";
-	error_message[131] = "Arithmetic or string expression expected.";
-	error_message[132] = "Program expected.";
-	error_message[133] = "Procedure expected.";
 }
 
 

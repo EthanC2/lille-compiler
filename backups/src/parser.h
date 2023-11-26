@@ -39,12 +39,12 @@ class parser
         void loop_statement();
 
         void range();
-        lille_type expr();
+        void expr();
         void expr_list();
-        lille_type simple_expr();
-        lille_type expr2();
-        lille_type term();
-        lille_type factor();
+        void simple_expr();
+        void expr2();
+        void term();
+        void factor();
         lille_type primary();
 
         bool is_number(symbol::symbol_type s);
@@ -59,11 +59,6 @@ class parser
         bool in_first_of_simple_statement(symbol::symbol_type s);
         bool in_first_of_compound_statement(symbol::symbol_type s);
         bool in_first_of_expr(symbol::symbol_type s);
-
-	lille_type must_be_type(token *tok, lille_type tya, lille_type tyb);
-	bool is_ordered_type(lille_type type);
-	bool is_arithmetic_type(lille_type type);
-	lille_type compatible_type(lille_type tya, lille_type tyb);
 
     private:
         bool debugging {false};

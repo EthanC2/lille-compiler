@@ -48,7 +48,7 @@ void id_table::dump_id_table(bool dump_all)
 		cout << "Dump of the entire symbol table." << endl;
 		cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 		
-		for (int i=0; i <= scopes.size(); ++i)
+		for (int i=0; i < scopes.size(); ++i)
 		{
 		    std::cout << "\nSCOPE " << i << ":\n";
 
@@ -66,22 +66,38 @@ void id_table::dump_id_table(bool dump_all)
 
 void id_table::enter_scope()
 {
+    ++scope_level;
+
+    if (scope_level >= scopes.size() - 1)
+    {
+	scopes.push_back(nullptr);
+    }
+
     if (debugging)
     {
 	std::cout << "[ID TABLE] incremented scope: " << scope_level << " => " << scope_level+1 << '\n';
+	std::cout << "[ID TABLE] scopes: ";
 	for (const IdTableNode* scope : scopes)
 	{
-	    std::cout << scope << ", ";
+	    if (scope == nullptr)
+	    {
+		std::cout << "nullptr";
+	    }
+	    else
+	    {
+		std::cout << scope;
+	    }
+
+	    std::cout << ", ";
 	}
 	std::cout.put('\n');
     }
-
-    ++scope_level;
-    scopes.push_back(nullptr);
 }
 
 void id_table::exit_scope()
 {
+    --scope_level;
+
     if (debugging)
     {
 	std::cout << "[ID TABLE] decremented scope: " << scope_level << " => " << scope_level-1 << '\n';
@@ -91,8 +107,6 @@ void id_table::exit_scope()
 	}
 	std::cout.put('\n');
     }
-
-    --scope_level;
 }
 
 size_t id_table::get_scope()
@@ -107,17 +121,39 @@ id_table_entry* id_table::lookup(const std::string &name)
 
     while (level >= 0)
     {
+	if (debugging)
+	{
+	    std::cout << "[ID TABLE] Searching scope level " << level << " for identifier \"" << name << "\"\n";
+	}
 	entry = lookup(scopes[level], name);
+
 	if (entry != nullptr)
 	{
+	    if (debugging)
+	    {
+		std::cout << "[ID TABLE] found identifer \"" << name << "\" at scope level " << level << '\n';
+	    }
+
 	    return entry;
+	}
+	else if (debugging)
+	{
+	   std::cout << "[ID TABLE] did NOT identifer \"" << name << "\" at scope level " << level << '\n';
 	}
 
 	--level;
     }
 
-    //throw lille_exception("identifier \"" + name + "\n does not exist");
-    //error->flag(tok, 81);
+    if (debugging)
+    {
+	std::cout << "[ID TABLE: lookup] did not find \"" << name << "\"\n";
+    }
+
+    if (verbose)
+    {
+	dump_id_table();
+    }
+
     return nullptr;
 }
 
@@ -267,4 +303,44 @@ void id_table::dump_tree(IdTableNode *node, int depth)
 
     dump_tree(node->left, depth + 1);
     dump_tree(node->right, depth + 1);
+}
+
+// All predefined functions have one value parameter, so no need for variadic templates
+void id_table::predefine_function(const std::string &name, lille_type argument_type, lille_type return_type)
+{
+    if (debugging)
+    {
+	std::cout << "[ID TABLE: PREDEFINE FUNCTION] predefining function \"" << name << "\" with parameter type " << argument_type.to_string() << " and return type " << return_type.to_string() << '\n';
+    }
+
+    token *predefined_func;
+    token *argument;
+    symbol *predefined_sym;
+    id_table_entry *func_id;
+    id_table_entry *param_id;
+
+    // Define predefined function
+    predefined_sym = new symbol(symbol::identifier);
+    predefined_func = new token(predefined_sym, 0, 0);
+    predefined_func->set_identifier_value(name);
+    func_id = enter_id(predefined_func, lille_type::type_func, lille_kind::unknown, /* scope = */ 0, 0, return_type);
+
+    // Define predefined function argument
+    argument = new token(predefined_sym, 0, 0);
+    argument->set_identifier_value(name + "_arg__");
+
+    param_id = new id_table_entry(
+	argument,
+	argument_type,
+	lille_kind::value_param,
+	/* scope = */ 0,
+	0,
+	lille_type::type_unknown
+    );
+
+    func_id->add_parameter(param_id);
+
+    // Add predefined function to table
+    add_table_entry(func_id);
+    add_table_entry(param_id);
 }

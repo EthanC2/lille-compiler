@@ -1,0 +1,7 @@
+program foo is
+    i : constant integer := 100;
+begin
+    for i in 1 .. 10 loop
+	writeln (i);	
+    end loop;
+end;

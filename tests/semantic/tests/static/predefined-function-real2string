@@ -1,0 +1,5 @@
+program foo is
+    x : string;
+begin
+    x := real2string(3.14);
+end;

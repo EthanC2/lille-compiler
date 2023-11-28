@@ -1,0 +1,2 @@
+*** ERROR: Identifier not previously declared. Error #81 at (3, 4).
+*** ERROR: Identifier must be a procedure name in this context. Error #90 at (3, 4).

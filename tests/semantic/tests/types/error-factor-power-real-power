@@ -1,0 +1,5 @@
+program foo is
+    x : real;
+begin
+    x := 2 ** 1.5;
+end;

@@ -1,5 +1,5 @@
 program foo is
     x : boolean;
 begin
-    x := 1 = 2 or 2 = 1;
+    x := true and false;
 end;

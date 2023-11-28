@@ -1,0 +1,15 @@
+program foo is
+    function bar return integer is
+    begin
+	return 100;
+    end;
+
+    function baz(x : value integer) return integer is
+    begin
+	return x;
+    end;
+
+    x : integer;
+begin
+    x := baz(bar());
+end;

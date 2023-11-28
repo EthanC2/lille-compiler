@@ -1,0 +1,3 @@
+*** ERROR: Identifier not previously declared. Error #81 at (3, 4).
+*** ERROR: A semicolon (;) is expected. Error #5 at (3, 6).
+*** ERROR: Error in statement. Error #79 at (3, 6).

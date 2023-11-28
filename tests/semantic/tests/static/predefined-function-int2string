@@ -1,0 +1,5 @@
+program foo is
+    x : string;
+begin
+    x := int2string(100);
+end;

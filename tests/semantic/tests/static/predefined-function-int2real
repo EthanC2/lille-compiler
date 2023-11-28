@@ -1,0 +1,5 @@
+program foo is
+    x : real;
+begin
+    x := int2real(100);
+end;

@@ -1,0 +1,10 @@
+program foo is
+    function bar(x : value integer; y : value integer) return integer is
+    begin
+	return x + y;
+    end;
+
+    x : integer;
+begin
+    x := bar(10);
+end;

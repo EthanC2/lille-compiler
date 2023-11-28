@@ -40,7 +40,7 @@ class parser
 
         void range();
         lille_type expr();
-        void expr_list();
+        int expr_list();
         lille_type simple_expr();
         lille_type expr2();
         lille_type term();

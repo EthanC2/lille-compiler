@@ -39,6 +39,7 @@ class id_table
 {
     private:
 	    bool debugging {false};
+	    bool verbose {false};
 	    std::vector<IdTableNode*> scopes;
 	    int scope_level;
 	    error_handler* error;
@@ -59,6 +60,7 @@ class id_table
 	void trace_all(bool b);
 	//bool trace_all();
 	bool add_table_entry(id_table_entry *id);
+	void predefine_function(const std::string &name, lille_type argument_type, lille_type return_type);
 	id_table_entry* enter_id(
 		token *id,
 		lille_type typ = lille_type::type_unknown,

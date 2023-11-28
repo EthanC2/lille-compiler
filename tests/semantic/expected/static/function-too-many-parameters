@@ -1,0 +1,4 @@
+*** ERROR: A right parenthesis ()) is expected. Error #21 at (9, 21).
+*** ERROR: Illegal symbol follows expression. Error #113 at (9, 21).
+*** ERROR: A semicolon (;) is expected. Error #5 at (9, 23).
+*** ERROR: Error in statement. Error #79 at (9, 23).

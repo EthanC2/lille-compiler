@@ -89,6 +89,15 @@ void parser::prog()
 
     ENTER();
     scan->get_token();
+    id_tab->predefine_function("REAL2INT", lille_type::type_real, lille_type::type_integer);
+    id_tab->predefine_function("INT2REAL", lille_type::type_integer, lille_type::type_real);
+    id_tab->predefine_function("INT2STRING", lille_type::type_integer, lille_type::type_string);
+    id_tab->predefine_function("REAL2INT", lille_type::type_real, lille_type::type_string);
+
+    if (debugging)
+    {
+	id_tab->dump_id_table();
+    }
 
     DEBUG("program symbol");
     scan->must_be(symbol::program_sym);
@@ -200,49 +209,39 @@ void parser::declaration()
 		DEBUG("becomes symbol");
 		this->scan->must_be(symbol::becomes_sym);
 
-		if (this->scan->have(symbol::integer))
+		if (type.is_type(lille_type::type_integer))
 		{
-		    must_be_type(scan->this_token(), type, lille_type::type_integer);
-
 		    DEBUG("<integer>");
 		    value = this->scan->this_token()->get_integer_value();
-		    if (type.get_type() != lille_type::type_integer)
-		    {
-			this->err->flag(this->scan->this_token(), 111);
-		    }
-
 		    this->scan->must_be(symbol::integer);
 		}
-		else if (this->scan->have(symbol::real_num))
+		else if (type.is_type(lille_type::type_real))
 		{
-		    must_be_type(scan->this_token(), type, lille_type::type_arith);
-
-		    DEBUG("<real>");
-		    value = this->scan->this_token()->get_real_value();
-		    if (type.get_type() != lille_type::type_real)
+		    if (scan->have(symbol::integer))
 		    {
-			this->err->flag(this->scan->this_token(), 111);
+			DEBUG("<integer>");
+			value = this->scan->this_token()->get_integer_value();
+			this->scan->must_be(symbol::integer);
 		    }
-
-		    this->scan->must_be(symbol::real_num);
+		    else if (scan->have(symbol::real_num))
+		    {
+			DEBUG("<real>");
+			value = this->scan->this_token()->get_real_value();
+			this->scan->must_be(symbol::real_num);
+		    }
+		    else
+		    {
+			err->flag(scan->this_token(), 118);
+		    }
 		}
-		else if(this->scan->have(symbol::strng))
+		else if(type.is_type(lille_type::type_string))
 		{
-		    must_be_type(scan->this_token(), type, lille_type::type_string);
-
 		    DEBUG("<string>");
 		    value = this->scan->this_token()->get_string_value();
-		    if (type.get_type() != lille_type::type_string)
-		    {
-			this->err->flag(this->scan->this_token(), 111);
-		    }
-
 		    this->scan->must_be(symbol::strng);
 		}
-		else if (this->scan->have(symbol::true_sym) or this->scan->have(symbol::false_sym))
+		else if (type.is_type(lille_type::type_boolean))
 		{
-		    must_be_type(scan->this_token(), type, lille_type::type_boolean);
-
 		    DEBUG("<boolean>");
 		    if (this->scan->have(symbol::true_sym))
 		    {
@@ -388,7 +387,7 @@ void parser::declaration()
         function_id->fix_return_type(this->type());
 	if (debugging)
 	{
-	    std::cout << "[ID TABLE: simple_statement::function] set type to " << function_id->get_type().to_string() << '\n';
+	    std::cout << "[ID TABLE: declaration::function] set type to " << function_id->get_type().to_string() << '\n';
 	}
 
         DEBUG("is symbol");
@@ -494,6 +493,7 @@ void parser::param(id_table_entry *subprogram)
     {
 	parameter_id = id_tab->enter_id(identifier, type, kind, level);
 	subprogram->add_parameter(parameter_id);
+	id_tab->add_table_entry(parameter_id);
 
 	if (subprogram->get_type().is_type(lille_type::type_func) and parameter_id->get_kind().is_kind(lille_kind::ref_param))
 	{
@@ -625,11 +625,25 @@ void parser::statement()
 //                      | null
 void parser::simple_statement()
 {
+    lille_type type;
+    token *tok;
+    id_table_entry* entry;
     ENTER();
 
     if (this->scan->have(symbol::identifier))
     {
         DEBUG("identifier symbol");
+	tok = scan->this_token();
+	entry = id_tab->lookup(tok->get_identifier_value());
+	if (debugging)
+	{
+	    std::cout << '[' << __FUNCTION__ << " :: identifier] entry \"" << tok->get_identifier_value() << "\" = " << entry << '\n';
+	}
+
+	if (entry == nullptr)
+	{
+	    err->flag(tok, 81);
+	}
         this->scan->must_be(symbol::identifier);
 
         if (this->scan->have(symbol::left_paren_sym))
@@ -646,11 +660,30 @@ void parser::simple_statement()
             this->scan->must_be(symbol::right_paren_sym);
         }
         else if (this->scan->have(symbol::becomes_sym))
-        {
+        {   
             DEBUG("becomes symbol");
             this->scan->must_be(symbol::becomes_sym);
 
-            this->expr();
+            type = this->expr();
+
+	    if (debugging)
+	    {
+		std::cout << "<simple_statement::assignment> rhs type: " << type.to_string() << '\n';
+
+		if (entry == nullptr)
+		{
+		    std::cout << "<simple_statement::assignment> constant/variable not found\n"; 
+		}
+		else
+		{
+		    std::cout << "<simple_statement::assignment> found variable/constant \"" << entry->get_name() << "\" of type " << entry->get_type().to_string() << '\n';
+		}
+	    }
+
+	    if (entry != nullptr and not entry->get_type().is_type(type))
+	    {
+		err->flag(scan->this_token(), 93);
+	    }
         }
     }
     else if (this->scan->have(symbol::exit_sym))
@@ -861,6 +894,12 @@ void parser::for_statement()
     this->scan->must_be(symbol::for_sym);
 
     DEBUG("identifier symbol");
+    if (scan->have(symbol::identifier))
+    {
+	token *identifier = scan->this_token();
+	id_table_entry *entry = id_tab->enter_id(identifier, lille_type::type_integer, lille_kind::variable, id_tab->get_scope());
+	id_tab->add_table_entry(entry);
+    }
     this->scan->must_be(symbol::identifier);
 
     DEBUG("in symbol");
@@ -926,7 +965,7 @@ lille_type parser::expr()
     ENTER();
 
     type_lhs = this->simple_expr();
-    must_be_type(scan->this_token(), type_lhs, lille_type::type_arith_or_bool);
+    must_be_type(scan->this_token(), type_lhs, lille_type::type_ordered);
 
     if (this->is_relop(this->scan->this_token()->get_sym()))
     {
@@ -969,11 +1008,13 @@ lille_type parser::expr()
 //
 // NOTE: This is NOT a part of the original grammar.
 //       I have added it as an abstraction to make parsing simpler.
-void parser::expr_list()
+int parser::expr_list()
 {
+    int nexpr = 0;
     ENTER();
 
     this->expr();
+    ++nexpr;
 
     while (this->scan->have(symbol::comma_sym))
     {
@@ -981,9 +1022,11 @@ void parser::expr_list()
         this->scan->must_be(symbol::comma_sym);
 
         this->expr();
+	++nexpr;
     }
 
     LEAVE();
+    return nexpr;
 }
 
 // <simple_expr> ::= <expr2> { <stringop> <expr2> }*
@@ -1197,6 +1240,7 @@ lille_type parser::factor()
 lille_type parser::primary()
 {
     lille_type type;
+    int nparams = 0;
 
     if (this->scan->have(symbol::not_sym))
     {
@@ -1251,20 +1295,37 @@ lille_type parser::primary()
         DEBUG("identifier symbol");
 	token *identifier = this->scan->this_token();
 	id_table_entry *entry = id_tab->lookup(identifier->get_identifier_value());
+	if (debugging)
+	{
+	    if (entry == nullptr)
+	    {
+		std::cout << "<primary :: identifier> DID NOT FIND entry \"" << identifier->get_identifier_value() << "\"\n";
+		err->flag(scan->this_token(), 81);
+	    }
+	    else
+	    {
+		std::cout << "<primary :: identifier> found entry \"" << entry->get_name() << "\"\n";
+	    }
+	}
 	this->scan->must_be(symbol::identifier);
 
-        if (this->scan->have(symbol::left_paren_sym))
-        {
-            DEBUG("left parenthesis symbol");
-            this->scan->must_be(symbol::left_paren_sym);
+	if (this->scan->have(symbol::left_paren_sym))
+	{
+	    DEBUG("left parenthesis symbol");
+	    this->scan->must_be(symbol::left_paren_sym);
 
 	    if (entry->get_number_of_parameters() > 0)
 	    {
-		this->expr_list();
+		nparams = this->expr_list();
+
+		if (entry != nullptr and nparams != entry->get_number_of_parameters())
+		{
+		    err->flag(entry->get_token(), 97);
+		}
 	    }
 
-            DEBUG("right parenthesis symbol");
-            this->scan->must_be(symbol::right_paren_sym);
+	    DEBUG("right parenthesis symbol");
+	    this->scan->must_be(symbol::right_paren_sym);
 
 	    if (debugging)
 	    {
@@ -1279,7 +1340,7 @@ lille_type parser::primary()
 	    }
 
 	    return entry != nullptr ? entry->get_return_type() : lille_type::type_unknown;
-        }
+	}
 	else
 	{
 	    if (debugging)
@@ -1293,8 +1354,11 @@ lille_type parser::primary()
 		    std::cout << "<primary :: variable|constant>: type: " << entry->get_type().to_string() << '\n';
 		}
 	    }
+
 	    return entry != nullptr ? entry->get_type() : lille_type::type_unknown;
 	}
+
+	return lille_type::type_unknown;
     }
     else if (this->is_number(this->scan->this_token()->get_sym()))
     {
@@ -1486,7 +1550,7 @@ bool parser::is_arithmetic_type(lille_type type)
 // type ORDERED is ARITH | STRING | BOOLEAN
 bool parser::is_ordered_type(lille_type type)
 {
-    return is_arithmetic_type(type) or type.is_type(lille_type::type_integer) or type.is_type(lille_type::type_boolean);
+    return is_arithmetic_type(type) or type.is_type(lille_type::type_string) or type.is_type(lille_type::type_boolean);
 }
 
 // Performs arithmetic type widening

@@ -1,0 +1,2 @@
+*** ERROR: Identifier is not assignable. Must be a variable or reference parameter. Error #85 at (7, 4).
+*** ERROR: LHS and RHS of assignment are not type compatible. Error #93 at (7, 13).

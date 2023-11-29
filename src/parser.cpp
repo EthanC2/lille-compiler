@@ -92,7 +92,7 @@ void parser::prog()
     id_tab->predefine_function("REAL2INT", lille_type::type_real, lille_type::type_integer);
     id_tab->predefine_function("INT2REAL", lille_type::type_integer, lille_type::type_real);
     id_tab->predefine_function("INT2STRING", lille_type::type_integer, lille_type::type_string);
-    id_tab->predefine_function("REAL2INT", lille_type::type_real, lille_type::type_string);
+    id_tab->predefine_function("REAL2STRING", lille_type::type_real, lille_type::type_string);
 
     if (debugging)
     {
@@ -132,7 +132,7 @@ void parser::prog()
 
 
 // <block> ::= { <declaration> }* begin <statement_list> end [ <ident> ]
-void parser::block(const std::string &block_name, bool is_program_identifier)
+void parser::block(id_table_entry *context, bool is_program_identifier)
 {
     ENTER();
     id_tab->enter_scope();
@@ -145,7 +145,7 @@ void parser::block(const std::string &block_name, bool is_program_identifier)
     DEBUG("begin symbol");
     scan->must_be(symbol::begin_sym);
     
-    this->statement_list();
+    this->statement_list(context);
     
     DEBUG("end symbol");
     scan->must_be(symbol::end_sym);
@@ -153,7 +153,7 @@ void parser::block(const std::string &block_name, bool is_program_identifier)
     if (this->scan->have(symbol::identifier))
     {
         DEBUG("identifier symbol");
-	if (this->scan->this_token()->get_identifier_value() != block_name)
+	if (context != nullptr and this->scan->this_token()->get_identifier_value() != context->get_name())
 	{
 	    if (is_program_identifier)
 	    {
@@ -393,7 +393,7 @@ void parser::declaration()
         DEBUG("is symbol");
         this->scan->must_be(symbol::is_sym);
 
-        this->block(function->get_identifier_value());
+        this->block(function_id);
         
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
@@ -577,14 +577,14 @@ void parser::statement_list()
 {
     ENTER();
 
-    this->statement();
+    this->statement(context);
 
     DEBUG("semicolon symbol");
     this->scan->must_be(symbol::semicolon_sym);
 
     while (this->in_first_of_statement(this->scan->this_token()->get_sym()))
     {
-        this->statement();
+        this->statement(context);
         
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
@@ -601,7 +601,7 @@ void parser::statement()
 
     if (this->in_first_of_simple_statement(this->scan->this_token()->get_sym()))
     {
-        this->simple_statement();
+        this->simple_statement(context);
     }
     else if (this->in_first_of_compound_statement(this->scan->this_token()->get_sym()))
     {
@@ -648,6 +648,11 @@ void parser::simple_statement()
 
         if (this->scan->have(symbol::left_paren_sym))
         {
+	    if (entry != nullptr and not (entry->get_type().is_type(lille_type::type_func) or entry->get_type().is_type(lille_type::type_proc)))
+	    {
+		err->flag(scan->this_token(), 91);
+	    }
+
             DEBUG("left parenthesis symbol");
             this->scan->must_be(symbol::left_paren_sym);
 
@@ -680,6 +685,11 @@ void parser::simple_statement()
 		}
 	    }
 
+	    if (entry != nullptr and not (entry->get_kind().is_kind(lille_kind::variable) or entry->get_kind().is_kind(lille_kind::ref_param)))
+	    {
+		err->flag(scan->this_token(), 85);
+	    }
+
 	    if (entry != nullptr and not entry->get_type().is_type(type))
 	    {
 		err->flag(scan->this_token(), 93);
@@ -701,6 +711,11 @@ void parser::simple_statement()
     }
     else if (this->scan->have(symbol::return_sym))
     {
+	//if (context != nullptr and not (context->get_type().is_type(lille_type::type_proc) or context->get_type().is_type(lille_type::type_func)))
+	//{
+	//    err->flag(scan->this_token(), 88);
+	//}
+
         DEBUG("return symbol");
         this->scan->must_be(symbol::return_sym);
 
@@ -708,6 +723,10 @@ void parser::simple_statement()
         {
             this->expr();
         }
+	else
+	{
+	
+	}
     }
     else if (this->scan->have(symbol::read_sym))
     {
@@ -897,7 +916,7 @@ void parser::for_statement()
     if (scan->have(symbol::identifier))
     {
 	token *identifier = scan->this_token();
-	id_table_entry *entry = id_tab->enter_id(identifier, lille_type::type_integer, lille_kind::variable, id_tab->get_scope());
+	id_table_entry *entry = id_tab->enter_id(identifier, lille_type::type_integer, lille_kind::for_ident, id_tab->get_scope());
 	id_tab->add_table_entry(entry);
     }
     this->scan->must_be(symbol::identifier);
@@ -1314,7 +1333,7 @@ lille_type parser::primary()
 	    DEBUG("left parenthesis symbol");
 	    this->scan->must_be(symbol::left_paren_sym);
 
-	    if (entry->get_number_of_parameters() > 0)
+	    if (entry != nullptr and entry->get_number_of_parameters() > 0)
 	    {
 		nparams = this->expr_list();
 

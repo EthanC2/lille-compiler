@@ -19,7 +19,7 @@ class parser
         void dump_tokenstream();
 
         void prog();
-        void block(const std::string &block_name, bool is_program_identfier = false);
+        void block(id_table_entry *context, bool is_program_identfier = false);
         void declaration();
 
         lille_type type();
@@ -28,19 +28,18 @@ class parser
 	std::vector<token*> ident_list();        
         lille_kind param_kind();
 
-        void statement_list();
-        void statement();
-        void simple_statement();
+	void statement_list(id_table_entry *context);
+        void statement(id_table_etnry *context);
+        void simple_statement(id_table_entry *context);
         void compound_statement();
-
         void if_statement();
         void while_statement();
         void for_statement();
         void loop_statement();
 
         void range();
-        lille_type expr();
         int expr_list();
+        lille_type expr();
         lille_type simple_expr();
         lille_type expr2();
         lille_type term();

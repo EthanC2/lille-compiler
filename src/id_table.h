@@ -12,6 +12,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "token.h"
 #include "error_handler.h"
@@ -38,17 +39,13 @@ struct IdTableNode
 class id_table 
 {
     private:
+	    error_handler* error;
 	    bool debugging {false};
 	    bool verbose {false};
-	    std::vector<IdTableNode*> scopes;
+	    std::vector<std::unordered_map<std::string,id_table_entry*>> scopes;
 	    int scope_level;
-	    error_handler* error;
 
-	    bool add_table_entry(IdTableNode *node, id_table_entry *entry);
-	    id_table_entry* lookup(IdTableNode *node, const std::string &name);
-	    id_table_entry* lookup(IdTableNode *node, token *tok);
-	    void dump_tree(IdTableNode *node, int depth = 0);
-
+	    void dump_map(const std::unordered_map<std::string,id_table_entry*>& map);
     public:
 	id_table(error_handler* err);
 	~id_table();
@@ -56,7 +53,6 @@ class id_table
 	void exit_scope();
 	size_t get_scope();
 	id_table_entry* lookup(const std::string &name);
-	id_table_entry* lookup(token *tok);
 	void trace_all(bool b);
 	//bool trace_all();
 	bool add_table_entry(id_table_entry *id);

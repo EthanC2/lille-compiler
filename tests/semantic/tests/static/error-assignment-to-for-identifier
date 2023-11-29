@@ -1,0 +1,7 @@
+program foo is
+begin
+    for i in 1 .. 10
+    loop
+	i := 100;
+    end loop;
+end;

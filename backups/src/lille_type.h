@@ -28,7 +28,9 @@ public:
 		type_unknown,
 		type_arith,
 		type_arith_or_string,
-		type_prog
+		type_prog,
+		type_ordered,
+		type_arith_or_bool
 	};
 
 

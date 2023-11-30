@@ -127,12 +127,12 @@ void parser::prog()
         this->err->flag(this->scan->this_token(), 77);
     }
 
-    LEAVE();
+    LEAVE();    
 }
 
 
 // <block> ::= { <declaration> }* begin <statement_list> end [ <ident> ]
-void parser::block(id_table_entry *context, bool is_program_identifier)
+void parser::block(const std::string &name, bool is_program_identifier)
 {
     ENTER();
     id_tab->enter_scope();
@@ -145,7 +145,7 @@ void parser::block(id_table_entry *context, bool is_program_identifier)
     DEBUG("begin symbol");
     scan->must_be(symbol::begin_sym);
     
-    this->statement_list(context);
+    this->statement_list();
     
     DEBUG("end symbol");
     scan->must_be(symbol::end_sym);
@@ -153,7 +153,7 @@ void parser::block(id_table_entry *context, bool is_program_identifier)
     if (this->scan->have(symbol::identifier))
     {
         DEBUG("identifier symbol");
-	if (context != nullptr and this->scan->this_token()->get_identifier_value() != context->get_name())
+	if (scan->this_token()->get_identifier_value() != name)
 	{
 	    if (is_program_identifier)
 	    {
@@ -182,87 +182,87 @@ void parser::declaration()
 
     if (this->scan->have(symbol::identifier))
     {
-	std::vector<token*> identifiers = this->ident_list();
-	lille_kind kind = lille_kind(lille_kind::variable);
-	lille_type type = lille_type(lille_type::type_unknown);
-	std::variant<int,float,bool,std::string> value;
-	bool constant = false;
-        
-        DEBUG("colon symbol");
-        this->scan->must_be(symbol::colon_sym);
+        std::vector<token*> identifiers = this->ident_list();
+        lille_kind kind = lille_kind(lille_kind::variable);
+        lille_type type = lille_type(lille_type::type_unknown);
+        std::variant<int,float,bool,std::string> value;
+        bool constant = false;
+            
+            DEBUG("colon symbol");
+            this->scan->must_be(symbol::colon_sym);
 
-        if (this->scan->have(symbol::constant_sym))
-        {
-	    constant = true;
-	    kind = lille_kind(lille_kind::constant);
+            if (this->scan->have(symbol::constant_sym))
+            {
+            constant = true;
+            kind = lille_kind(lille_kind::constant);
 
-            DEBUG("constant symbol");
-            this->scan->must_be(symbol::constant_sym);
-        }
+                DEBUG("constant symbol");
+                this->scan->must_be(symbol::constant_sym);
+            }
 
-        type = this->type();
+            type = this->type();
 
-        if (constant)
-        {
-	    if (this->scan->have(symbol::becomes_sym))
-	    {
-		DEBUG("becomes symbol");
-		this->scan->must_be(symbol::becomes_sym);
+            if (constant)
+            {
+            if (this->scan->have(symbol::becomes_sym))
+            {
+            DEBUG("becomes symbol");
+            this->scan->must_be(symbol::becomes_sym);
 
-		if (type.is_type(lille_type::type_integer))
-		{
-		    DEBUG("<integer>");
-		    value = this->scan->this_token()->get_integer_value();
-		    this->scan->must_be(symbol::integer);
-		}
-		else if (type.is_type(lille_type::type_real))
-		{
-		    if (scan->have(symbol::integer))
-		    {
-			DEBUG("<integer>");
-			value = this->scan->this_token()->get_integer_value();
-			this->scan->must_be(symbol::integer);
-		    }
-		    else if (scan->have(symbol::real_num))
-		    {
-			DEBUG("<real>");
-			value = this->scan->this_token()->get_real_value();
-			this->scan->must_be(symbol::real_num);
-		    }
-		    else
-		    {
-			err->flag(scan->this_token(), 118);
-		    }
-		}
-		else if(type.is_type(lille_type::type_string))
-		{
-		    DEBUG("<string>");
-		    value = this->scan->this_token()->get_string_value();
-		    this->scan->must_be(symbol::strng);
-		}
-		else if (type.is_type(lille_type::type_boolean))
-		{
-		    DEBUG("<boolean>");
-		    if (this->scan->have(symbol::true_sym))
-		    {
-			value = true;
-		    }
-		    else
-		    {
-			value = false;
-		    }
+            if (type.is_type(lille_type::type_integer))
+            {
+                DEBUG("<integer>");
+                value = this->scan->this_token()->get_integer_value();
+                this->scan->must_be(symbol::integer);
+            }
+            else if (type.is_type(lille_type::type_real))
+            {
+                if (scan->have(symbol::integer))
+                {
+                DEBUG("<integer>");
+                value = this->scan->this_token()->get_integer_value();
+                this->scan->must_be(symbol::integer);
+                }
+                else if (scan->have(symbol::real_num))
+                {
+                DEBUG("<real>");
+                value = this->scan->this_token()->get_real_value();
+                this->scan->must_be(symbol::real_num);
+                }
+                else
+                {
+                err->flag(scan->this_token(), 118);
+                }
+            }
+            else if(type.is_type(lille_type::type_string))
+            {
+                DEBUG("<string>");
+                value = this->scan->this_token()->get_string_value();
+                this->scan->must_be(symbol::strng);
+            }
+            else if (type.is_type(lille_type::type_boolean))
+            {
+                DEBUG("<boolean>");
+                if (this->scan->have(symbol::true_sym))
+                {
+                value = true;
+                }
+                else
+                {
+                value = false;
+                }
 
-		    this->scan->get_token();
-		}
-		else
-		{
-		    this->err->flag(this->scan->this_token(), 84);
-		}
-	    }
-	    else
-	    {
-		this->err->flag(this->scan->this_token(), 110);
-	    }
+                this->scan->get_token();
+            }
+            else
+            {
+                this->err->flag(this->scan->this_token(), 84);
+            }
+            }
+            else
+            {
+            this->err->flag(this->scan->this_token(), 110);
+            }
         }
 
 	for (token *variable : identifiers)
@@ -393,7 +393,7 @@ void parser::declaration()
         DEBUG("is symbol");
         this->scan->must_be(symbol::is_sym);
 
-        this->block(function_id);
+        this->block(function_id->get_name());
         
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
@@ -577,14 +577,14 @@ void parser::statement_list()
 {
     ENTER();
 
-    this->statement(context);
+    this->statement();
 
     DEBUG("semicolon symbol");
     this->scan->must_be(symbol::semicolon_sym);
 
     while (this->in_first_of_statement(this->scan->this_token()->get_sym()))
     {
-        this->statement(context);
+        this->statement();
         
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
@@ -601,7 +601,7 @@ void parser::statement()
 
     if (this->in_first_of_simple_statement(this->scan->this_token()->get_sym()))
     {
-        this->simple_statement(context);
+        this->simple_statement();
     }
     else if (this->in_first_of_compound_statement(this->scan->this_token()->get_sym()))
     {

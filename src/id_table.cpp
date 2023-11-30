@@ -127,9 +127,13 @@ id_table_entry* id_table::lookup(const std::string &name)
 
 void id_table::trace_all(bool b)
 {
-    // TODO
-    //for each variable in each scope
-    //	    variable.set_trace(true);
+    for (auto& scope : scopes)
+	{
+		for (auto& [name, entry] : scope)
+		{
+			entry->set_trace(true);
+		}
+	}
 }
 
 

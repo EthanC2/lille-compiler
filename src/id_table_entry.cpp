@@ -71,7 +71,7 @@ std::string id_table_entry::get_name() const
 {
     if (id == nullptr)
     {
-	throw lille_exception("cannot access name of null identifier");
+	    throw lille_exception("cannot access name of null identifier");
     }
 
     return id->get_identifier_value();
@@ -81,7 +81,7 @@ int id_table_entry::get_integer_value()
 {
     if (type.get_type() != lille_type::type_integer)
     {
-	throw lille_exception("cannot access integer value of non-integer type");
+	    throw lille_exception("cannot access integer value of non-integer type");
     }
 
     return std::get<int>(*value);
@@ -91,7 +91,7 @@ float id_table_entry::get_real_value()
 {
     if (type.get_type() != lille_type::type_real)
     {
-	throw lille_exception("cannot access real value of non-real type");
+	    throw lille_exception("cannot access real value of non-real type");
     }
 
     return std::get<float>(*value);
@@ -101,7 +101,7 @@ std::string id_table_entry::get_string_value()
 {
     if (type.get_type() != lille_type::type_string)
     {
-	throw lille_exception("cannot access string value of non-string type");
+	    throw lille_exception("cannot access string value of non-string type");
     }
 
     return std::get<std::string>(*value);
@@ -112,7 +112,7 @@ lille_type id_table_entry::get_return_type()
 {
     if (type.get_type() != lille_type::type_func)
     {
-	throw lille_exception("cannot access return type of non-function type");
+	    throw lille_exception("cannot access return type of non-function type");
     }
 
     return return_type;
@@ -127,7 +127,7 @@ void id_table_entry::fix_return_type(lille_type return_type_)
 {
     if (type.get_type() != lille_type::type_func)
     {
-	throw lille_exception("cannot fix return type for non-function type");
+	    throw lille_exception("cannot fix return type for non-function type");
     }
 
     return_type = return_type_;
@@ -137,7 +137,7 @@ void id_table_entry::add_parameter(id_table_entry *parameter)
 {
     if (type.get_type() != lille_type::type_func and type.get_type() != lille_type::type_proc)
     {
-	throw lille_exception("cannot access append parameter to parameter list of non-procedure and non-function types");
+	    throw lille_exception("cannot access append parameter to parameter list of non-procedure and non-function types");
     }
 
     parameter_list.push_back(parameter);
@@ -147,13 +147,13 @@ id_table_entry* id_table_entry::get_nth_parameter(int n)
 {
     if (type.get_type() != lille_type::type_func and type.get_type() != lille_type::type_proc)
     {
-	throw lille_exception("cannot access nth parameter for non-procedure and non-function types");
+	    throw lille_exception("cannot access nth parameter for non-procedure and non-function types");
     }
 
     if (parameter_list.size() >= n)
     {
-	//throw lille_exception("cannot access " + std::to_string(n) + "th parameter of a function with " + std::to_string(parameter_list->size()) + " parameters");
-	return nullptr;
+	    //throw lille_exception("cannot access " + std::to_string(n) + "th parameter of a function with " + std::to_string(parameter_list->size()) + " parameters");
+	    return nullptr;
     }
 
     return parameter_list[n];
@@ -163,7 +163,7 @@ int id_table_entry::get_number_of_parameters()
 {
     if (type.get_type() != lille_type::type_func and type.get_type() != lille_type::type_proc)
     {
-	throw lille_exception("cannot access number of paramters for non-procedure and non-function types");
+	    throw lille_exception("cannot access number of paramters for non-procedure and non-function types");
     }
 
     return parameter_list.size();
@@ -180,34 +180,34 @@ std::string id_table_entry::to_string()
 
     if (type.get_type() == lille_type::type_proc or type.get_type() == lille_type::type_func)
     {
-	if (not parameter_list.empty())
-	{
-	    description += ", parameter list: {\n";
+        if (not parameter_list.empty())
+        {
+            description += ", parameter list: {\n";
 
-	    for (id_table_entry *parameter : parameter_list)
-	    {
-		description += "\t" + parameter->to_string() + ",\n";
-	    }
+            for (id_table_entry *parameter : parameter_list)
+            {
+            description += "\t" + parameter->to_string() + ",\n";
+            }
 
-	    description += '}';
-	}
+            description += '}';
+        }
 
-	if (type.get_type() == lille_type::type_func)
-	{
-	    description += ", return type: " + return_type.to_string();
-	}
+        if (type.get_type() == lille_type::type_func)
+        {
+            description += ", return type: " + return_type.to_string();
+        }
     }
 
     if (kind.is_kind(lille_kind::constant))
     {
-	if (type.get_type() == lille_type::type_integer)
-	{
-	    description += ", value: " + std::to_string(std::get<int>(*value));
-	}
-	else if (type.get_type() == lille_type::type_real)
-	{
-	    description += ", value: " + std::to_string(std::get<float>(*value));
-	}
+        if (type.get_type() == lille_type::type_integer)
+        {
+            description += ", value: " + std::to_string(std::get<int>(*value));
+        }
+        else if (type.get_type() == lille_type::type_real)
+        {
+            description += ", value: " + std::to_string(std::get<float>(*value));
+        }
     }
 
     description += " }";

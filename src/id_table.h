@@ -22,20 +22,6 @@
 
 using namespace std;
 
-struct IdTableNode
-{
-    IdTableNode(id_table_entry *entry_)
-    {
-	entry = entry_;
-	left = nullptr;
-	right = nullptr;
-    }
-
-    id_table_entry *entry;
-    IdTableNode *left;
-    IdTableNode *right;
-};
-
 class id_table 
 {
     private:

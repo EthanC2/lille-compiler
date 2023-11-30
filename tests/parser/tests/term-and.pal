@@ -1,0 +1,28 @@
+JMP  0      14           (1) Jump over the predefined functions.
+LDV  0      0            (2) Load argument.                
+OPR  0      25           (3) Convert an integer to a real. 
+OPR  0      1            (4) Function value return.        
+LDV  0      0            (5) Load argument.                
+OPR  0      26           (6) Convert a real to an integer. 
+OPR  0      1            (7) Function value return.        
+LDV  0      0            (8) Load argument.                
+OPR  0      27           (9) Convert an integer to a string.
+OPR  0      1            (10) Function value return.        
+LDV  0      0            (11) Load argument.                
+OPR  0      28           (12) Convert a real to a string.   
+OPR  0      1            (13) Function value return.        
+INC  0      0            (14) Reserve space for local variables
+JMP  0      28           (15) Jump to start of statements or block.
+INC  0      0            (16) Reserve space for local variables
+JMP  0      18           (17) Jump to start of statements or block.
+LCI  0      1            (18) Load integer value.           
+LCI  0      1            (19) Load integer value.           
+OPR  0      9            (20) Odd                           
+OPR  0      16           (21) Not - logical complement      
+OPR  0      29           (22) Logical and.                  
+OPR  0      9            (23) Odd                           
+OPR  0      1            (24) Function value return.        
+LCS  0      'ERROR OCCURED - FUNCTION MUST RETURN A VALUE.'       (25) A function must return a value before the end of block is encountered.
+OPR  0      20           (26) Display message.              
+JMP  0      0            (27) Halt program after error.     
+JMP  0      0            (28) Halt program.                 

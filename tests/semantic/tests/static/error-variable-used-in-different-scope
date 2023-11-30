@@ -1,0 +1,8 @@
+program foo is
+    procedure foo is 
+    begin
+        null;
+    end;
+begin
+    x := 10;
+end;

@@ -1,0 +1,8 @@
+program foo is
+    procedure bar(x : value integer) is
+    begin
+        null;
+    end;
+begin
+    bar("A long time ago in a galaxy far, far away....");
+end;

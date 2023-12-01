@@ -1,0 +1,5 @@
+program foo is
+    s : string;
+begin
+    s := 10;
+end;

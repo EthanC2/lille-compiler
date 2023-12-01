@@ -1,0 +1,13 @@
+program foo is
+    function bar return integer is
+    begin
+        return 100;
+    end;
+
+    procedure baz(s : value string) is 
+    begin
+        null;
+    end;
+begin
+    baz( bar() );
+end;

@@ -1,0 +1,9 @@
+program foo is
+    procedure bar(x : value integer; y : value integer) is
+    begin
+        writeln(x);
+        writeln(y);
+    end;
+begin
+    bar(10, 20, 30);
+end;

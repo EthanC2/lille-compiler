@@ -150,9 +150,9 @@ id_table_entry* id_table_entry::get_nth_parameter(int n)
 	    throw lille_exception("cannot access nth parameter for non-procedure and non-function types");
     }
 
-    if (parameter_list.size() >= n)
+    if (n >= parameter_list.size())
     {
-	    //throw lille_exception("cannot access " + std::to_string(n) + "th parameter of a function with " + std::to_string(parameter_list->size()) + " parameters");
+	    throw lille_exception("cannot access " + std::to_string(n) + "th parameter of a function with " + std::to_string(parameter_list.size()) + " parameters");
 	    return nullptr;
     }
 
@@ -212,14 +212,4 @@ std::string id_table_entry::to_string()
 
     description += " }";
     return description;
-}
-
-bool id_table_entry::operator<(const id_table_entry &rhs)
-{
-    return this->get_name() < rhs.get_name();
-}
-
-bool id_table_entry::operator>(const id_table_entry &rhs)
-{
-    return this->get_name() > rhs.get_name();
 }

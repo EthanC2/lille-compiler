@@ -1,0 +1,13 @@
+program foo is
+    function bar return integer is
+    begin
+        return 100;
+    end;
+
+    function baz(x : value integer) return integer is
+    begin
+        return x;
+    end;
+begin
+    writeln( baz( bar() ) );
+end;

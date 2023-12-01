@@ -1,0 +1,4 @@
+program foo is
+begin
+    x := 100;
+end;

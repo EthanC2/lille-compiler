@@ -321,7 +321,7 @@ void parser::declaration()
 	}
         this->scan->must_be(symbol::identifier);
 
-	id_tab->enter_scope();
+	    id_tab->enter_scope();
         if (this->scan->have(symbol::left_paren_sym))
         {
             DEBUG("left parenthesis symbol");
@@ -369,7 +369,7 @@ void parser::declaration()
 	}
         this->scan->must_be(symbol::identifier);
 
-	id_tab->enter_scope();
+	    id_tab->enter_scope();
         if (this->scan->have(symbol::left_paren_sym))
         {
             DEBUG("left parenthesis symbol");
@@ -458,7 +458,7 @@ void parser::param_list(id_table_entry *subprogram)
         DEBUG("semicolon symbol");
         this->scan->must_be(symbol::semicolon_sym);
 
-	this->param(subprogram);
+	    this->param(subprogram);
     }
 
     if (not this->scan->have(symbol::right_paren_sym))
@@ -628,72 +628,78 @@ void parser::simple_statement()
     lille_type type;
     token *tok;
     id_table_entry* entry;
+    int nparam;
     ENTER();
 
     if (this->scan->have(symbol::identifier))
     {
         DEBUG("identifier symbol");
-	tok = scan->this_token();
-	entry = id_tab->lookup(tok->get_identifier_value());
-	if (debugging)
-	{
-	    std::cout << '[' << __FUNCTION__ << " :: identifier] entry \"" << tok->get_identifier_value() << "\" = " << entry << '\n';
-	}
+	    tok = scan->this_token();
+	    entry = id_tab->lookup(tok->get_identifier_value());
+        if (debugging)
+        {
+            std::cout << '[' << __FUNCTION__ << " :: identifier] entry \"" << tok->get_identifier_value() << "\" = " << entry << '\n';
+        }
 
-	if (entry == nullptr)
-	{
-	    err->flag(tok, 81);
-	}
+        if (entry == nullptr)
+        {
+            err->flag(tok, 81);
+        }
         this->scan->must_be(symbol::identifier);
 
         if (this->scan->have(symbol::left_paren_sym))
         {
-	    if (entry != nullptr and not (entry->get_type().is_type(lille_type::type_func) or entry->get_type().is_type(lille_type::type_proc)))
-	    {
-		err->flag(scan->this_token(), 91);
-	    }
-
-            DEBUG("left parenthesis symbol");
-            this->scan->must_be(symbol::left_paren_sym);
-
-            if (this->in_first_of_expr(this->scan->this_token()->get_sym()))
+            if (entry != nullptr and not (entry->get_type().is_type(lille_type::type_func) or entry->get_type().is_type(lille_type::type_proc)))
             {
-                this->expr_list();
+                err->flag(scan->this_token(), 91);
             }
 
-            DEBUG("right parenthesis symbol");
-            this->scan->must_be(symbol::right_paren_sym);
-        }
-        else if (this->scan->have(symbol::becomes_sym))
-        {   
-            DEBUG("becomes symbol");
-            this->scan->must_be(symbol::becomes_sym);
+                DEBUG("left parenthesis symbol");
+                this->scan->must_be(symbol::left_paren_sym);
 
-            type = this->expr();
+                if (this->in_first_of_expr(this->scan->this_token()->get_sym()))
+                {
+                    nparam = this->expr_list(entry);
 
-	    if (debugging)
-	    {
-		std::cout << "<simple_statement::assignment> rhs type: " << type.to_string() << '\n';
+                    if (entry != nullptr and entry->get_number_of_parameters() != nparam)
+                    {
+                        err->flag(entry->get_token(), 98);
+                    }
+                }
 
-		if (entry == nullptr)
-		{
-		    std::cout << "<simple_statement::assignment> constant/variable not found\n"; 
-		}
-		else
-		{
-		    std::cout << "<simple_statement::assignment> found variable/constant \"" << entry->get_name() << "\" of type " << entry->get_type().to_string() << '\n';
-		}
-	    }
+                DEBUG("right parenthesis symbol");
+                this->scan->must_be(symbol::right_paren_sym);
+            }
+            else if (this->scan->have(symbol::becomes_sym))
+            {   
+                DEBUG("becomes symbol");
+                this->scan->must_be(symbol::becomes_sym);
 
-	    if (entry != nullptr and not (entry->get_kind().is_kind(lille_kind::variable) or entry->get_kind().is_kind(lille_kind::ref_param)))
-	    {
-		err->flag(scan->this_token(), 85);
-	    }
+                type = this->expr();
 
-	    if (entry != nullptr and not entry->get_type().is_type(type))
-	    {
-		err->flag(scan->this_token(), 93);
-	    }
+            if (debugging)
+            {
+                std::cout << "<simple_statement::assignment> rhs type: " << type.to_string() << '\n';
+
+                if (entry == nullptr)
+                {
+                    std::cout << "<simple_statement::assignment> constant/variable not found\n"; 
+                }
+                else
+                {
+                    std::cout << "<simple_statement::assignment> found variable/constant \"" << entry->get_name() << "\" of type " << entry->get_type().to_string() << '\n';
+                }
+            }
+
+            if (entry != nullptr and not (entry->get_kind().is_kind(lille_kind::variable) or entry->get_kind().is_kind(lille_kind::ref_param)))
+            {
+                err->flag(scan->this_token(), 85);
+            }
+
+            if (entry != nullptr and not entry->get_type().is_type(type))
+            {
+                err->flag(scan->this_token(), 93);
+            }
         }
     }
     else if (this->scan->have(symbol::exit_sym))
@@ -711,10 +717,10 @@ void parser::simple_statement()
     }
     else if (this->scan->have(symbol::return_sym))
     {
-	//if (context != nullptr and not (context->get_type().is_type(lille_type::type_proc) or context->get_type().is_type(lille_type::type_func)))
-	//{
-	//    err->flag(scan->this_token(), 88);
-	//}
+        //if (context != nullptr and not (context->get_type().is_type(lille_type::type_proc) or context->get_type().is_type(lille_type::type_func)))
+        //{
+        //    err->flag(scan->this_token(), 88);
+        //}
 
         DEBUG("return symbol");
         this->scan->must_be(symbol::return_sym);
@@ -758,14 +764,14 @@ void parser::simple_statement()
             DEBUG("left parenthesis symbol");
             this->scan->must_be(symbol::left_paren_sym);
 
-            this->expr_list();
+            this->expr_list(nullptr);
 
             DEBUG("right parenthesis symbol");
             this->scan->must_be(symbol::right_paren_sym);
         }
         else
         {
-            this->expr_list();
+            this->expr_list(nullptr);
         }
     }
     else if (this->scan->have(symbol::writeln_sym))
@@ -780,7 +786,7 @@ void parser::simple_statement()
 
             if (this->in_first_of_expr(this->scan->this_token()->get_sym()))
             {
-                this->expr_list();
+                this->expr_list(nullptr);
             }
 
             DEBUG("right parenthesis symbol");
@@ -790,7 +796,7 @@ void parser::simple_statement()
         {
             if (this->in_first_of_expr(this->scan->this_token()->get_sym()))
             {
-                this->expr_list();
+                this->expr_list(nullptr);
             }
         }
     }
@@ -1027,25 +1033,68 @@ lille_type parser::expr()
 //
 // NOTE: This is NOT a part of the original grammar.
 //       I have added it as an abstraction to make parsing simpler.
-int parser::expr_list()
+int parser::expr_list(id_table_entry *subprogram)
 {
-    int nexpr = 0;
     ENTER();
 
-    this->expr();
-    ++nexpr;
-
-    while (this->scan->have(symbol::comma_sym))
+    if (subprogram == nullptr)
     {
-        DEBUG("comma symbol");
-        this->scan->must_be(symbol::comma_sym);
+        int nexpr = 0;
 
         this->expr();
-	++nexpr;
+        ++nexpr;
+
+        while (this->scan->have(symbol::comma_sym))
+        {
+            DEBUG("comma symbol");
+            this->scan->must_be(symbol::comma_sym);
+
+            this->expr();
+            ++nexpr;
+        }
+
+        return nexpr;
+    }
+    else
+    {
+        const int nparam = subprogram->get_number_of_parameters();
+        id_table_entry *formal_parameter;
+        lille_type actual_parameter_type;
+        bool mismatching_types = false;
+
+        for (int i = 0; i < nparam; ++i)
+        {
+            formal_parameter = subprogram->get_nth_parameter(i);
+            actual_parameter_type = this->expr();
+
+            if (not formal_parameter->get_type().is_type(actual_parameter_type))
+            {
+                mismatching_types = true;
+            }
+
+            if (i < nparam - 1)
+            {
+                if (scan->have(symbol::comma_sym))
+                {
+                    DEBUG("comma symbol");
+                    scan->must_be(symbol::comma_sym);
+                }
+                else
+                {
+                    err->flag(scan->this_token(), 97);
+                }
+            }
+        }
+
+        if (mismatching_types)
+        {
+            err->flag(scan->this_token(), 122);
+        }
+
+        return subprogram->get_number_of_parameters();
     }
 
     LEAVE();
-    return nexpr;
 }
 
 // <simple_expr> ::= <expr2> { <stringop> <expr2> }*
@@ -1297,7 +1346,7 @@ lille_type parser::primary()
         this->scan->must_be(symbol::left_paren_sym);
 
         type = this->simple_expr();
-	must_be_type(scan->this_token(), type, lille_type::type_ordered);
+	    must_be_type(scan->this_token(), type, lille_type::type_ordered);
 
         DEBUG("right parenthesis symbol");
         this->scan->must_be(symbol::right_paren_sym);
@@ -1312,50 +1361,50 @@ lille_type parser::primary()
     else if (this->scan->have(symbol::identifier))
     {
         DEBUG("identifier symbol");
-	token *identifier = this->scan->this_token();
-	id_table_entry *entry = id_tab->lookup(identifier->get_identifier_value());
-	if (debugging)
-	{
-	    if (entry == nullptr)
-	    {
-		std::cout << "<primary :: identifier> DID NOT FIND entry \"" << identifier->get_identifier_value() << "\"\n";
-		err->flag(scan->this_token(), 81);
-	    }
-	    else
-	    {
-		std::cout << "<primary :: identifier> found entry \"" << entry->get_name() << "\"\n";
-	    }
-	}
-	this->scan->must_be(symbol::identifier);
+        token *identifier = this->scan->this_token();
+        id_table_entry *entry = id_tab->lookup(identifier->get_identifier_value());
+        if (debugging)
+        {
+            if (entry == nullptr)
+            {
+            std::cout << "<primary :: identifier> DID NOT FIND entry \"" << identifier->get_identifier_value() << "\"\n";
+            err->flag(scan->this_token(), 81);
+            }
+            else
+            {
+            std::cout << "<primary :: identifier> found entry \"" << entry->get_name() << "\"\n";
+            }
+        }
+        this->scan->must_be(symbol::identifier);
 
-	if (this->scan->have(symbol::left_paren_sym))
-	{
-	    DEBUG("left parenthesis symbol");
-	    this->scan->must_be(symbol::left_paren_sym);
+        if (this->scan->have(symbol::left_paren_sym))
+        {
+            DEBUG("left parenthesis symbol");
+            this->scan->must_be(symbol::left_paren_sym);
 
-	    if (entry != nullptr and entry->get_number_of_parameters() > 0)
-	    {
-		nparams = this->expr_list();
+            if (entry != nullptr and entry->get_number_of_parameters() > 0)
+            {
+                nparams = this->expr_list(entry);
 
-		if (entry != nullptr and nparams != entry->get_number_of_parameters())
-		{
-		    err->flag(entry->get_token(), 97);
-		}
-	    }
+                if (entry != nullptr and nparams != entry->get_number_of_parameters())
+                {
+                    err->flag(entry->get_token(), 97);
+                }
+            }
 
-	    DEBUG("right parenthesis symbol");
-	    this->scan->must_be(symbol::right_paren_sym);
+            DEBUG("right parenthesis symbol");
+            this->scan->must_be(symbol::right_paren_sym);
 
-	    if (debugging)
-	    {
-		if (entry == nullptr)
-		{
-		    std::cout << "<primary :: function|procedure>: function not found. returning lille_Type::type_unknown\n";    
-		}
-		else
-		{
-		    std::cout << "<primary :: function|procedure>: return type: " << entry->get_return_type().to_string() << '\n';
-		}
+            if (debugging)
+            {
+            if (entry == nullptr)
+            {
+                std::cout << "<primary :: function|procedure>: function not found. returning lille_Type::type_unknown\n";    
+            }
+            else
+            {
+                std::cout << "<primary :: function|procedure>: return type: " << entry->get_return_type().to_string() << '\n';
+            }
 	    }
 
 	    return entry != nullptr ? entry->get_return_type() : lille_type::type_unknown;

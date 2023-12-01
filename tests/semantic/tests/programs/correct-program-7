@@ -1,0 +1,14 @@
+program foo is 
+    procedure bar(x : ref integer) is
+        procedure baz(x : value integer) is
+        begin
+            null;
+        end;
+    begin
+        baz(x);
+    end;
+
+    x : integer;
+begin
+    bar(x);
+end;

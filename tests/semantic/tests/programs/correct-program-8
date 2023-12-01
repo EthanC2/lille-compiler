@@ -1,0 +1,12 @@
+program foo is
+    function bar(x : value integer) return integer is
+    begin
+        if x < 10 then
+            return x;
+        end if;
+
+        return bar(x - 1);
+    end;
+begin
+    writeln( bar(20) );
+end;

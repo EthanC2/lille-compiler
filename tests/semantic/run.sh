@@ -6,7 +6,7 @@ set -eu
 
 # 2. Initialize local variables
 find . -name '*.pal' -print0 | xargs -0 rm -v || true
-categories=($(ls tests))
+categories=(${1:-$(ls tests)})
 nfailed=0
 npassed=0
 

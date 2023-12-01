@@ -38,7 +38,7 @@ class parser
         void loop_statement();
 
         void range();
-        int expr_list();
+        int expr_list(id_table_entry *subprogram);
         lille_type expr();
         lille_type simple_expr();
         lille_type expr2();
